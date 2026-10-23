@@ -485,6 +485,18 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> 
                          ("stage2_v", "P2S_STAGE2_V")):
         if stages.get(key) is not None:
             env[env_key] = str(stages[key])
+    pads = stages.get("stage3_pads")
+    if pads:
+        env["P2S_STAGE3_PADS"] = ",".join(f"{a}:{b}" for a, b in pads)
+    stage3_cookie = stages.get("stage3_cookie")
+    if stage3_cookie is not None:
+        env["P2S_STAGE3_COOKIE"] = "1" if stage3_cookie else "0"
+    for key, env_key in (("stage3_wfields", "P2S_STAGE3_WFIELDS"),
+                         ("stage3_fake_len", "P2S_STAGE3_FAKE_LEN"),
+                         ("stage3_fakes", "P2S_STAGE3_FAKES"),
+                         ("stage3_b_name_len", "P2S_STAGE3_B_NAME_LEN")):
+        if stages.get(key) is not None:
+            env[env_key] = str(stages[key])
 
     if not stream:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)

