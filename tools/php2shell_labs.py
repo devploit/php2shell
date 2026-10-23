@@ -5,7 +5,7 @@ php2shell_labs.py — disposable local laboratories for the PHP builds in the
 profile/offset inventory.
 
 Each lab is an official PHP Apache image with:
-  - display_errors=On, memory_limit=8M, post_max_size=64M (lab/rce/php.ini)
+  - display_errors=On, memory_limit=8M, post_max_size=512M (lab/rce/php.ini)
   - one prefork worker (lab/rce/apache.conf)
   - a minimal webroot (lab/rce/webroot)
   - a per-lab /out mount for the proof file
@@ -45,6 +45,17 @@ BUILDS = [
     ("8.3.35", "php:8.3.35-apache", 8104),
     ("8.4.26", "php:8.4.26-apache", 8105),
     ("8.5.11", "php:8.5.11-apache", 8106),
+    # Real-world subversions (mirror the matrix factory builds).
+    ("8.2.28", "php:8.2.28-apache", 8120),
+    ("8.3.20", "php:8.3.20-apache", 8121),
+    ("8.4.2", "php:8.4.2-apache", 8122),
+    ("8.4.5", "php:8.4.5-apache", 8123),
+    ("8.4.10", "php:8.4.10-apache", 8124),
+    ("8.4.20", "php:8.4.20-apache", 8125),
+    ("8.4.25", "php:8.4.25-apache", 8126),
+    ("8.5.0", "php:8.5.0-apache", 8127),
+    ("8.5.5", "php:8.5.5-apache", 8128),
+    ("8.5.10", "php:8.5.10-apache", 8129),
 ]
 
 
@@ -139,6 +150,12 @@ def main() -> int:
     ap.add_argument("--only", default=None, help="comma-separated versions for 'up'")
     args = ap.parse_args()
     only = set(args.only.split(",")) if args.only else None
+    if only is not None:
+        unknown = sorted(only - {version for version, _image, _port in BUILDS})
+        if unknown:
+            print(f"unknown version(s) in --only: {', '.join(unknown)}", file=sys.stderr)
+            print(f"available: {', '.join(v for v, _i, _p in BUILDS)}", file=sys.stderr)
+            return 2
     if args.command == "up":
         up(only)
     elif args.command == "down":

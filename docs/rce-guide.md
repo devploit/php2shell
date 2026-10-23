@@ -1,12 +1,17 @@
 # PHP2Shell RCE — verified exploit and how to use it
 
-Date: 2026-10-21. Scope: authorized testing only.
+Date: 2026-10-23. Scope: authorized testing only.
 
 ## 1. What is verified
 
 A full, pure-HTTP RCE chain for **PHP 8.4.26 + Apache prefork + mod_php** has
 been executed against a local laboratory target. No agent, file drop, gdb or
 debugger is needed on the target: the exploit is a normal HTTP client.
+
+As of this date the chain is verified on **21 image/arch profiles** covering
+18 PHP versions (see the README status table): 8.4.10/11/19/20/25/26,
+8.5.10/11 (carrier stage 3) and 8.5.0 – 8.5.9 (vessel stage 3, section 8),
+each with a `uid=33(www-data)` command proof on an isolated local lab.
 
 Verified output, 3/3 runs:
 
@@ -94,8 +99,10 @@ PROOF: uid=33(www-data) gid=33(www-data) groups=33(www-data)
 ```
 
 Constraints: `post_max_size` and any proxy body limit must allow `huge_mb`;
-`display_errors=On` and a single prefork worker are still required. The heap
-calibration did not change between 8M and 128M on this build.
+the stock default `post_max_size=8M` silently rejects every OOM body (the
+dispatcher detects this and reports `CONFIG BLOCKED`). `display_errors=On` and
+a single prefork worker are still required. The heap calibration did not
+change between 8M and 128M on this build.
 
 ### 2.1 Commands and interactive mode
 
@@ -310,6 +317,7 @@ the RCE stage and prints what is still missing.
   "stages": {
     "stage1_n": 841, "stage1_forge_len": 79,
     "stage2_t": 406, "stage2_v": 16,
+    "stage3_mode": "carrier",
     "stage3_pads": [[31,31],[31,31],[31,31],[31,31],[31,31],[31,31]],
     "stage3_carrier": true
   },
@@ -322,6 +330,34 @@ that exact build. Same PHP version built by another distribution has different
 `libphp` offsets and a different heap layout, so the version string alone is not
 a build fingerprint.
 
+`stages.stage3_mode` selects the stage-3 variant: `"carrier"` (upstream
+15-byte string), `"lab"` (55-byte reference carriers) or `"vessel"` (see the
+next section; adds `stage3_early`, `stage3_blobs` and `stage3_vessel_index`).
+
+### Vessel stage 3 (early-8.5 layouts)
+
+On the early-8.5 builds (`php:8.5.0` – `php:8.5.9`, all verified) the request
+machinery carves the 32-byte
+(bin-3) page at chunk offset 0x68 before any multipart field is parsed, while
+B2's fake-HashTable blobs (167-byte values, bin-13/192 B) land one page later
+at 0x69 — the upstream carrier string can never reach the dangling reference
+on 0x68. The vessel variant (`tools/php2shell_vessel.py`) realigns the pages:
+an "early" 160-byte S-side field consumes one whole bin-13 page, pushing the
+dangling reference onto 0x69 (`R0 = 0x692E0` with three `7:7` pads); B2 then
+uses only long names/values (no bin-3 carves of its own) so its blob run
+starts at 0x69, and blob 1 — the vessel — embeds the 15-byte reference
+pattern at its offset 0x88 (over the fake cmd string's `h`/`len` fields,
+unread on the fire path) with `val.u1 type_info = 0x0307`. At session close
+the destructor reads the vessel as the stale reference and fires `zif_system`
+on blob 0's command string. Both leaks are unchanged from upstream; stages 1-2
+parameters stay `N=841`, `T=406`.
+
+The dispatcher routes vessel profiles automatically; to calibrate a new
+early-8.5 build, run `tools/php2shell_calibrate.py --stage3-mode vessel`
+(the geometry defaults come from the 8.5.0/8.5.5 calibration and carried over
+to 8.5.1–8.5.9 unchanged; they can be swept
+with `--early/--pad/--blobs/--vessel-index`).
+
 ### Scaling to more versions
 
 1. **Stage 1 (heap leak)** can be discovered at runtime: send unique 48-byte
@@ -332,7 +368,9 @@ a build fingerprint.
 3. **Stage 3 (fake HashTable / `zif_system`)** is the hard part: the dangling
    reference address and the live 167-byte carrier must be measured for each
    build. A calibration harness on a local replica (with `/proc/<pid>/mem` or
-   ASAN) turns that measurement into a profile.
+   ASAN) turns that measurement into a profile. When the carrier layout is
+   unreachable (early-8.5 heap), the vessel variant measures the blob-page
+   alignment instead.
 4. **Fixed releases** are rejected before any request is sent; `display_errors`,
    `memory_limit`, worker count and session settings must match the profile.
 

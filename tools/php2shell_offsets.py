@@ -43,6 +43,37 @@ DEFAULT_IMAGES = [
     "php:8.3.35-apache",
     "php:8.4.26-apache",
     "php:8.5.11-apache",
+    # Real-world subversions inside the vulnerable windows (same list as
+    # BUILDS in php2shell_matrix.py; pulled via a registry mirror when the
+    # Hub is rate-limited).
+    "php:8.4.2-apache",
+    "php:8.4.5-apache",
+    "php:8.4.6-apache",
+    "php:8.4.7-apache",
+    "php:8.4.8-apache",
+    "php:8.4.10-apache",
+    "php:8.4.11-apache",
+    "php:8.4.12-apache",
+    "php:8.4.13-apache",
+    "php:8.4.14-apache",
+    "php:8.4.15-apache",
+    "php:8.4.16-apache",
+    "php:8.4.17-apache",
+    "php:8.4.18-apache",
+    "php:8.4.19-apache",
+    "php:8.4.20-apache",
+    "php:8.4.25-apache",
+    "php:8.5.0-apache",
+    "php:8.5.1-apache",
+    "php:8.5.2-apache",
+    "php:8.5.3-apache",
+    "php:8.5.4-apache",
+    "php:8.5.5-apache",
+    "php:8.5.6-apache",
+    "php:8.5.7-apache",
+    "php:8.5.8-apache",
+    "php:8.5.9-apache",
+    "php:8.5.10-apache",
 ]
 
 LIB_PATHS = [
@@ -189,6 +220,36 @@ def extract(image: str) -> dict:
         docker("rm", "-f", name)
 
 
+def heap_status(version: str, arch: str) -> str | None:
+    """Cross-reference profiles/ for a heap calibration of this build.
+
+    Only calibrations against official images count: those profiles are named
+    <version>-<distro>-<arch>.json (or <version>-bookworm-<arch>.json from the
+    author's runs). Lab builds such as 8.3.0-bookworm.json use a different
+    libphp binary and must not vouch for the official image.
+    """
+    best = None
+    for path in glob.glob(os.path.join(ROOT, "profiles", f"*-{arch}.json")):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                p = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        if p.get("php_version") != version or p.get("arch") != arch:
+            continue
+        rank = (3 if p.get("rce") else
+                2 if p.get("measured", {}).get("libphp_base") else
+                1 if p.get("measured", {}).get("chunk_base") else 0)
+        if best is None or rank > best[0]:
+            best = (rank, p)
+    if best is None:
+        return None
+    return {3: "heap calibrated; RCE verified",
+            2: "heap calibrated; leaks only",
+            1: "heap calibrated; stage-1 leak only",
+            0: "heap calibrated; leak not reproduced"}[best[0]]
+
+
 def write_doc(results) -> None:
     entries = {}
     for path in glob.glob(os.path.join(OUT, "*.json")):
@@ -215,11 +276,13 @@ def write_doc(results) -> None:
     ]
     for r in ordered:
         lib = r.get("libphp") or {}
+        status = heap_status(r.get("php_version", "?"), r.get("arch", "?")) \
+            or r.get("status", "")
         lines.append("| {image} | {php} | {arch} | {zif} | {dtor} | {sha} | {status} |".format(
             image=r.get("image", ""), php=r.get("php_version", "?"),
             arch=r.get("arch", "?"), zif=lib.get("zif_system") or "-",
             dtor=lib.get("zval_ptr_dtor") or "-",
-            sha=(r.get("libphp_sha256") or "-")[:12], status=r.get("status", "")))
+            sha=(r.get("libphp_sha256") or "-")[:12], status=status))
     lines += ["", "## Notes", "",
               "- Offsets are relative to the `libphp.so` load base; ASLR changes the base, not the offset.",
               "- The same PHP version built by another distribution/arch has different offsets.",

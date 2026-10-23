@@ -37,7 +37,7 @@ not claim RCE on PHP 8.3.33.
 
 from __future__ import annotations
 from php2shell_paths import default_repo_dir
-from php2shell_upstream import patch_params, patch_tls
+from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
 
 import argparse
 import ipaddress
@@ -108,6 +108,7 @@ def main() -> int:
               "or pass --repo-dir", file=sys.stderr)
         return 4
     patch_params(repo)
+    patch_cookie_decode(repo)
     if args.insecure:
         patch_tls(repo)
 

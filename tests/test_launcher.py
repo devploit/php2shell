@@ -28,5 +28,16 @@ class LauncherGuardTests(unittest.TestCase):
             self.assertIn("bootstrap_upstream.py", result.stderr)
 
 
+class LabsValidationTests(unittest.TestCase):
+    def test_unknown_only_version_is_rejected(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "php2shell_labs.py"),
+             "up", "--only", "8.3.0"],
+            capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("unknown version(s) in --only: 8.3.0", result.stderr)
+        self.assertIn("available:", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

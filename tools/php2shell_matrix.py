@@ -42,6 +42,45 @@ BUILDS = [
     {"key": "8.5.11", "image": "php:8.5.11-apache", "port": 8093},
     {"key": "8.4.25", "image": "php:8.4.25-apache", "port": 8108},
     {"key": "8.5.10", "image": "php:8.5.10-apache", "port": 8109},
+    # Real-world subversions: unpatched builds that deployed systems actually
+    # run. 8.4.0, 8.4.3 and 8.4.9 tags are absent from Docker Hub; 8.4.2 is
+    # the earliest available 8.4. EOL branches ship from bullseye/buster
+    # images.
+    {"key": "8.5.5", "image": "php:8.5.5-apache", "port": 8110},
+    {"key": "8.5.0", "image": "php:8.5.0-apache", "port": 8111},
+    {"key": "8.4.20", "image": "php:8.4.20-apache", "port": 8112},
+    {"key": "8.4.10", "image": "php:8.4.10-apache", "port": 8113},
+    {"key": "8.4.5", "image": "php:8.4.5-apache", "port": 8114},
+    {"key": "8.4.2", "image": "php:8.4.2-apache", "port": 8115},
+    {"key": "8.3.20", "image": "php:8.3.20-apache", "port": 8116},
+    {"key": "8.2.28", "image": "php:8.2.28-apache", "port": 8117},
+    {"key": "8.1.34", "image": "php:8.1-apache", "distro": "bullseye", "port": 8118},
+    {"key": "7.4.33", "image": "php:7.4-apache", "distro": "buster", "port": 8119},
+    # Fill the subversion gaps inside the vulnerable windows: 8.4.5 is
+    # chunk-only and 8.4.10 gets RCE, so 8.4.6-8.4.9 mark the 8.4 boundary;
+    # 8.5.0/8.5.5 are leaks-only and 8.5.10 gets RCE, so 8.5.1-8.5.9 (minus
+    # the already-covered ones) mark the 8.5 boundary. 8.4.11-8.4.19 sit
+    # inside the known-good 8.4 layout family and close the coverage gap.
+    {"key": "8.5.1", "image": "php:8.5.1-apache", "port": 8130},
+    {"key": "8.5.2", "image": "php:8.5.2-apache", "port": 8131},
+    {"key": "8.5.3", "image": "php:8.5.3-apache", "port": 8132},
+    {"key": "8.5.4", "image": "php:8.5.4-apache", "port": 8133},
+    {"key": "8.5.6", "image": "php:8.5.6-apache", "port": 8134},
+    {"key": "8.5.7", "image": "php:8.5.7-apache", "port": 8135},
+    {"key": "8.5.8", "image": "php:8.5.8-apache", "port": 8136},
+    {"key": "8.5.9", "image": "php:8.5.9-apache", "port": 8137},
+    {"key": "8.4.11", "image": "php:8.4.11-apache", "port": 8138},
+    {"key": "8.4.12", "image": "php:8.4.12-apache", "port": 8139},
+    {"key": "8.4.13", "image": "php:8.4.13-apache", "port": 8140},
+    {"key": "8.4.14", "image": "php:8.4.14-apache", "port": 8141},
+    {"key": "8.4.15", "image": "php:8.4.15-apache", "port": 8142},
+    {"key": "8.4.16", "image": "php:8.4.16-apache", "port": 8143},
+    {"key": "8.4.17", "image": "php:8.4.17-apache", "port": 8144},
+    {"key": "8.4.18", "image": "php:8.4.18-apache", "port": 8145},
+    {"key": "8.4.19", "image": "php:8.4.19-apache", "port": 8146},
+    {"key": "8.4.6", "image": "php:8.4.6-apache", "port": 8147},
+    {"key": "8.4.7", "image": "php:8.4.7-apache", "port": 8148},
+    {"key": "8.4.8", "image": "php:8.4.8-apache", "port": 8149},
 ]
 
 
@@ -75,7 +114,8 @@ def wait_http(url: str, timeout: float = 30.0) -> bool:
 
 
 def run_build(build, args) -> dict:
-    label = f"{build['key']}-bookworm-{arch_label()}"
+    distro = build.get("distro", "bookworm")
+    label = f"{build['key']}-{distro}-{arch_label()}"
     name = f"p2s-matrix-{build['key'].replace('.', '')}"
     outdir = prepare_lab_out(os.path.join(LAB, "out", build["key"]))
     proof = os.path.join(outdir, "p1")
@@ -101,14 +141,14 @@ def run_build(build, args) -> dict:
         return {"label": label, "status": "no-http"}
 
     actual_arch = container_arch(name) or arch_label()
-    label = f"{build['key']}-bookworm-{actual_arch}"
+    label = f"{build['key']}-{distro}-{actual_arch}"
     print(f"[*] architecture: {actual_arch}", flush=True)
 
     cmd = [sys.executable, os.path.join(HERE, "php2shell_calibrate.py"),
            "--target", url, "--container", name,
            "--repo-dir", args.repo_dir,
            "--proof-file", proof,
-           "--distro", f"bookworm-{actual_arch}",
+           "--distro", f"{distro}-{actual_arch}",
            "--arch", actual_arch,
            "--out-dir", PROFILES]
     if not args.full_search:
@@ -126,7 +166,7 @@ def run_build(build, args) -> dict:
     if not args.keep:
         docker("rm", "-f", name)
 
-    profile = os.path.join(PROFILES, f"{build['key']}-bookworm-{arch_label()}.json")
+    profile = os.path.join(PROFILES, f"{build['key']}-{distro}-{arch_label()}.json")
     status = "no-profile"
     rce = False
     if os.path.isfile(profile):
@@ -136,7 +176,8 @@ def run_build(build, args) -> dict:
             status = "rce" if rce else "leaks-only"
         except ValueError:
             status = "bad-profile"
-    return {"label": label, "status": status, "rce": rce, "profile": profile}
+    return {"label": label, "status": status, "rce": rce,
+            "profile": os.path.relpath(profile, ROOT)}
 
 
 def main() -> int:

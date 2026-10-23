@@ -143,6 +143,59 @@ class ProofTests(unittest.TestCase):
             self.assertEqual(auto.resolve_proof(args, ""), "/repo/out/p1")
 
 
+class ProbeTests(unittest.TestCase):
+    def test_oom_fatal_reveals_memory_limit(self):
+        body = (b"HTTP/1.1 200 OK\r\n\r\n<br />\n<b>Fatal error</b>:  Allowed memory size "
+                b"of 8388608 bytes exhausted (tried to allocate 16777224 bytes)")
+        parsed = auto.parse_probe_response(body)
+        self.assertEqual(parsed["memory_limit"], 8)
+        self.assertTrue(parsed["diagnostics"])
+        self.assertIsNone(parsed["post_max_size"])
+
+    def test_body_size_warning_reveals_post_max_size(self):
+        body = (b"HTTP/1.1 200 OK\r\n\r\n<br />\n<b>Warning</b>:  POST Content-Length of "
+                b"146800640 bytes exceeds the limit of 8388608 bytes")
+        parsed = auto.parse_probe_response(body)
+        self.assertEqual(parsed["post_max_size"], 8388608)
+        self.assertTrue(parsed["diagnostics"])
+        self.assertIsNone(parsed["memory_limit"])
+
+    def test_413_is_a_rejection_not_diagnostics(self):
+        parsed = auto.parse_probe_response(b"HTTP/1.1 413 Request Entity Too Large\r\n\r\n")
+        self.assertTrue(parsed["rejected"])
+        self.assertFalse(parsed["diagnostics"])
+
+    def test_plain_page_is_no_diagnostics(self):
+        parsed = auto.parse_probe_response(b"HTTP/1.1 200 OK\r\n\r\nOK\n")
+        self.assertFalse(parsed["diagnostics"])
+        self.assertIsNone(parsed["memory_limit"])
+        self.assertIsNone(parsed["post_max_size"])
+
+    def test_generic_php_markup_counts_as_diagnostics(self):
+        parsed = auto.parse_probe_response(b"HTTP/1.1 200 OK\r\n\r\nDeprecated: blah")
+        self.assertTrue(parsed["diagnostics"])
+
+
+class LeakTests(unittest.TestCase):
+    def test_small_value_is_implausible(self):
+        self.assertEqual(auto.implausible_leak({"chunk_base": 0x600000}), "0x600000")
+
+    def test_mmap_base_is_plausible(self):
+        self.assertIsNone(auto.implausible_leak({"chunk_base": 0x7FBE18800000}))
+
+    def test_aarch64_mmap_base_is_plausible(self):
+        self.assertIsNone(auto.implausible_leak({"chunk_base": 0xFFFF84600000}))
+
+    def test_no_leak_is_not_implausible(self):
+        self.assertIsNone(auto.implausible_leak({}))
+
+    def test_capture_leaks_from_upstream_output(self):
+        sink = {}
+        auto._capture_leaks("[+] chunk base = 0x600000\n", sink)
+        auto._capture_leaks("[+] libphp base = 0x7fbe1a200000\n", sink)
+        self.assertEqual(sink, {"chunk_base": 0x600000, "libphp_base": 0x7FBE1A200000})
+
+
 class InventoryTests(unittest.TestCase):
     def test_profiles_are_valid(self):
         names = set()
@@ -162,6 +215,13 @@ class InventoryTests(unittest.TestCase):
                 self.assertIsNotNone(data["libphp"].get("htdata"), path)
                 self.assertTrue(data["stages"].get("stage3_pads"), path)
                 self.assertIsInstance(data.get("oom_mb"), int, path)
+                mode = data["stages"].get("stage3_mode")
+                self.assertIn(mode, ("carrier", "lab", "vessel"), path)
+                if mode == "vessel":
+                    for key in ("stage3_early", "stage3_blobs",
+                                "stage3_vessel_index"):
+                        self.assertIsInstance(
+                            data["stages"].get(key), int, path)
 
     def test_profile_schema_if_present(self):
         schema = ROOT / "profiles" / "schema.json"
@@ -170,6 +230,10 @@ class InventoryTests(unittest.TestCase):
             self.assertIn("$schema", data)
             self.assertEqual(data.get("type"), "object")
             self.assertIn("arch", data.get("required", []))
+            rce_then = data.get("then", {})
+            self.assertIn("stage3_mode",
+                          rce_then.get("properties", {})
+                          .get("stages", {}).get("required", []))
 
     def test_offset_arch_metadata(self):
         for path in sorted((ROOT / "profiles" / "offsets").glob("*.json")):

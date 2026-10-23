@@ -32,6 +32,13 @@ class Exploit:
         ctx = ssl.create_default_context()
         s = ctx.wrap_socket(s)
         return s
+
+
+def parse_cookie(resp):
+    m = re.search(rb"Set-Cookie: PHPSESSID=([^\r\n]*?); path=/", resp)
+    if not m:
+        return b""
+    return urllib.parse.unquote_to_bytes(m.group(1).decode("latin1"))
 '''
 
 
@@ -60,9 +67,18 @@ class RuntimePatchTests(unittest.TestCase):
         self.assertIn("server_hostname=self.host", text)
         self.assertFalse(up.patch_tls(str(self.repo)))
 
+    def test_patch_cookie_decode(self):
+        self.assertTrue(up.patch_cookie_decode(str(self.repo)))
+        text = (self.repo / "exploit.py").read_text()
+        self.assertIn('raw = m.group(1).replace(b"+", b"%20")', text)
+        self.assertIn("unquote_to_bytes(raw.decode", text)
+        # idempotent
+        self.assertFalse(up.patch_cookie_decode(str(self.repo)))
+
     def test_missing_upstream_is_safe(self):
         self.assertFalse(up.patch_params(str(self.repo / "missing")))
         self.assertFalse(up.patch_tls(str(self.repo / "missing")))
+        self.assertFalse(up.patch_cookie_decode(str(self.repo / "missing")))
 
 
 if __name__ == "__main__":
