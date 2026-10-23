@@ -1,14 +1,8 @@
 [
   {
-    "label": "8.4.25-bookworm-aarch64",
+    "label": "8.4.8-bookworm-amd64",
     "status": "leaks-only",
     "rce": false,
-    "profile": "/Users/dpua/Downloads/php-vuln/profiles/8.4.25-bookworm-aarch64.json"
-  },
-  {
-    "label": "8.5.10-bookworm-aarch64",
-    "status": "rce",
-    "rce": true,
-    "profile": "/Users/dpua/Downloads/php-vuln/profiles/8.5.10-bookworm-aarch64.json"
+    "profile": "profiles/8.4.8-bookworm-amd64.json"
   }
 ]

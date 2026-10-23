@@ -34,28 +34,59 @@ not match the profile.
 | PHP 8.5.11 aarch64 | `php:8.5.11-apache` | `php-8.5.11-bookworm-aarch64` | yes | yes | **yes** | `uid=33(www-data)` |
 | PHP 8.5.11 amd64 | `php:8.5.11-apache` | `php-8.5.11-bookworm-amd64` | yes | yes | **yes** | separate offsets, same `htdata` |
 | PHP 8.5.10 aarch64 | `php:8.5.10-apache` | `php-8.5.10-bookworm-aarch64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.5.10 amd64 | `php:8.5.10-apache` | `php-8.5.10-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.5.5 amd64 | `php:8.5.5-apache` | `php-8.5.5-bookworm-amd64` | yes | yes | **yes** | vessel stage 3; `uid=33(www-data)` |
+| PHP 8.5.0 amd64 | `php:8.5.0-apache` | `php-8.5.0-bookworm-amd64` | yes | yes | **yes** | vessel stage 3; `uid=33(www-data)` |
+| PHP 8.5.1 – 8.5.9 amd64 | `php:8.5.{1..9}-apache` | `php-8.5.<v>-bookworm-amd64` | yes | yes | **yes** | vessel stage 3; `uid=33(www-data)` |
 | PHP 8.4.26 amd64 | `php:8.4.26-apache` | `php-8.4.26-bookworm-amd64` | yes | yes | **yes** | reference build |
 | PHP 8.4.25 aarch64 | `php:8.4.25-apache` | `php-8.4.25-bookworm-aarch64` | yes | yes | **yes** | probabilistic stage 3; retries |
-| PHP 8.5.0 aarch64 | `php:8.5.0-apache` | `php-8.5.0-bookworm` | yes | yes | no | stage-3 layout not found |
+| PHP 8.4.25 amd64 | `php:8.4.25-apache` | `php-8.4.25-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.4.20 amd64 | `php:8.4.20-apache` | `php-8.4.20-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.4.19 amd64 | `php:8.4.19-apache` | `php-8.4.19-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.4.11 amd64 | `php:8.4.11-apache` | `php-8.4.11-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.4.10 amd64 | `php:8.4.10-apache` | `php-8.4.10-bookworm-amd64` | yes | yes | **yes** | `uid=33(www-data)` |
+| PHP 8.4.13, 8.4.8 amd64 | `php:8.4.{8,13}-apache` | `php-8.4.<v>-bookworm-amd64` | yes | yes | no | stage-3 sweep attempts exhausted |
+| PHP 8.4.14 – 8.4.18, 8.4.12, 8.4.7, 8.4.6 amd64 | `php:8.4.<v>-apache` | `php-8.4.<v>-bookworm-amd64` | yes | pending | no | stage-2 leak needs re-run (cookie decode fix) |
+| PHP 8.5.0 aarch64 | `php:8.5.0-apache` | `php-8.5.0-bookworm` | yes | yes | no | lab build; stage-3 layout not found |
+| PHP 8.3.35 amd64 | `php:8.3.35-apache` | `php-8.3.35-bookworm-amd64` | yes | yes | no | stage-3 reference alive; vessel geometry does not fit this heap |
 | PHP 8.3.35 aarch64 | `php:8.3.35-apache` | `php-8.3.35-bookworm-aarch64` | yes | yes | no | stage-3 reference alive |
 | PHP 8.3.33 mod_php | `wordpress:7.1.1-apache` | `php-8.3.33-wordpress-mod_php` | yes | yes | no | stage-3 reference alive |
+| PHP 8.4.5 amd64 | `php:8.4.5-apache` | `php-8.4.5-bookworm-amd64` | yes | no | no | stale block at v0892; no libphp pointer |
+| PHP 8.3.20 amd64 | `php:8.3.20-apache` | `php-8.3.20-bookworm-amd64` | yes | no | no | stale block at v0892; no libphp pointer |
+| PHP 8.4.2 amd64 | `php:8.4.2-apache` | `php-8.4.2-bookworm-amd64` | no | no | no | UAF; leak shape differs |
 | PHP 8.3.0 aarch64 | `php:8.3.0-apache` | `php-8.3.0-bookworm` | no | no | no | `PS(id)` dangling; cookie not reclaimed |
+| PHP 8.2.34 amd64 | `php:8.2.34-apache` | `php-8.2.34-bookworm-amd64` | no | no | no | UAF; leak shape differs |
 | PHP 8.2.34 aarch64 | `php:8.2.34-apache` | `php-8.2.34-bookworm-aarch64` | no | no | no | UAF; leak shape differs |
-| PHP 8.1.34 aarch64 | `php:8.1-apache` | `php-8.1.34-bookworm-aarch64` | no | no | no | UAF; leak shape differs |
+| PHP 8.2.28 amd64 | `php:8.2.28-apache` | `php-8.2.28-bookworm-amd64` | no | no | no | UAF; leak shape differs |
+| PHP 8.1.34 amd64 | `php:8.1-apache` (bullseye) | `php-8.1.34-bullseye-amd64` | no | no | no | UAF; leak shape differs; EOL branch |
+| PHP 8.1.34 aarch64 | `php:8.1-apache` | `php-8.1.34-bookworm-aarch64` | no | no | no | UAF; leak shape differs; EOL branch |
 | PHP 8.0.30 aarch64 | `php:8.0-apache` | `php-8.0.30-bookworm-aarch64` | no | no | no | UAF; leak shape differs |
+| PHP 7.4.33 amd64 | `php:7.4-apache` (buster) | `php-7.4.33-buster-amd64` | no | no | no | UAF; leak shape differs; EOL branch |
 | PHP 7.4.33 aarch64 | `php:7.4-apache` | `php-7.4.33-bookworm-aarch64` | no | no | no | UAF; leak shape differs |
 | PHP 8.2.0 aarch64 | `php:8.2.0-apache` | — (offsets only) | n/a | n/a | no | no heap profile |
+| PHP 8.0.30 amd64 | `php:8.0-apache` | — (offsets only) | n/a | n/a | no | no heap profile |
 
-**13 heap profiles, 5 with verified RCE. Offsets extracted for 12 builds.**
+**47 heap profiles, 21 with verified RCE. Offsets extracted for 48 image/arch
+rows covering 39 distinct PHP builds.**
 
 `Heap leak` is stage 1, `libphp leak` is stage 2 and `RCE` is a real command
 proof on an isolated lab. `no` means not verified, not necessarily impossible;
-`n/a` means no heap profile exists for that build. The 8.2.0 row is an
-offsets-only entry. All `yes` rows use the lab configuration: Apache prefork
-`mod_php`, one worker, `display_errors=On`, `memory_limit=8M` and
-`session.upload_progress=On`. Per-image offsets and `libphp` sha256 are in
-[the offset inventory](docs/offset-inventory.md). The 8.4.25 profile needs the
-default retries because its stage 3 is probabilistic.
+`pending` means the sweep predates the cookie `'+'` decoding fix and the leak
+stage must be re-run; `n/a` means no heap profile exists for that build. The
+8.2.0 and 8.0.30-amd64 rows are offsets-only entries. All `yes` rows use the
+lab configuration: Apache prefork `mod_php`, one worker, `display_errors=On`,
+`memory_limit=8M` and `session.upload_progress=On`. Per-image offsets and
+`libphp` sha256 are in [the offset inventory](docs/offset-inventory.md). The
+8.4.25 (aarch64) profile needs the default retries because its stage 3 is
+probabilistic. The 8.5.0 – 8.5.9 rows use the **vessel stage 3**
+(`tools/php2shell_vessel.py`, documented in
+[the profile inventory](docs/profile-inventory.md)): the early-8.5 heap puts
+the dangling reference out of the upstream carrier's reach, so request S
+steers it one page up onto B2's blob page and a blob embeds the reference
+pattern itself. The 8.1/8.2/7.4 and 8.4.2 rows are the real-world "older
+subversion" builds: on those the stage-1 UAF shapes the heap differently and
+the leak does not reproduce with the 8.4.10+ parameters — an honest negative,
+reported as such.
 
 ## Features
 
@@ -64,8 +95,11 @@ default retries because its stage 3 is probabilistic.
   parameters explicitly. `--php-version` covers servers that hide their version;
   `--arch` selects aarch64 or amd64 (auto-detected for local containers,
   required for remote targets), and `--profile` forces an exact build.
-- **Memory-limit probe** — one request reveals the target `memory_limit` from
-  the fatal message; the chain then runs once instead of sweeping every value.
+- **Configuration probe** — one request reveals the target `memory_limit`,
+  `post_max_size` and whether request-startup diagnostics render
+  (`display_errors`). The chain then runs once instead of sweeping every
+  memory limit, and a `post_max_size` that would silently reject the OOM body
+  is reported as `CONFIG BLOCKED` before any exploit attempt.
 - **Worker pinning** — keeps N-1 prefork workers busy with idle keep-alive
   connections so the whole chain lands on one process. Automatic for loopback
   laboratories; opt-in for remote infrastructure.
@@ -117,8 +151,9 @@ Expected shape:
 00:00.00  DISCOVER   http://127.0.0.1:8105/index.php
 00:00.01  OK         PHP 8.4.26  ·  Apache/2.4.69 (Debian)
 00:00.01  PREFLIGHT  php-8.4.26-bookworm-amd64
-00:00.15  PROBE      memory_limit probe: 16 MiB body
+00:00.15  PROBE      config probe: 16 MiB body
 00:00.16  OK         detected memory_limit=8M
+00:00.16  OK         display_errors=On (request-startup diagnostics are rendered)
 00:00.17  EXECUTE    memory_limit=8M  ·  huge_mb=12
    │ [+] chunk base = 0x7ffffc400000
    │ [+] libphp base = 0x7ffffe013000
@@ -187,13 +222,19 @@ The shipped calibration targets:
 
 - Apache prefork + `mod_php` with **one worker**;
 - `display_errors=On`, `memory_limit=8M`, `max_input_vars=1000`;
+- **`post_max_size` ≥ `memory_limit` + 12M** (the labs ship 512M): stage 1
+  posts a body of `memory_limit` + 12M, and PHP rejects a body larger than
+  `post_max_size` *before* parsing it — no OOM, no leak, no error. The stock
+  default `post_max_size=8M` blocks the whole chain on its own;
 - `session.upload_progress.enabled=On`, `session.use_cookies=1`,
   `session.use_strict_mode=0`.
 
 A hardened production PHP (128M+, `display_errors=Off`, multiple workers, FPM)
 does not match the shipped calibration. Multi-worker targets are handled with
 `--pin-workers`; `display_errors=Off` and FPM remain open research items (see
-Limitations).
+Limitations). The dispatcher reports a blocking `post_max_size` as
+`CONFIG BLOCKED` and skips memory-limit candidates whose OOM body the target
+would reject.
 
 ## Multi-worker targets
 
@@ -380,7 +421,7 @@ OOM, which is why the 8.4/8.5 stage-3 carrier does not transfer.
   configuration.
 - **`expose_php=Off` changes stage 3.** Hiding `X-Powered-By` shifts the startup
   heap; the known stage-3 pads do not fit and a dedicated calibration is needed.
-- **8.5.0 / 8.3.0** have leaks or UAF preconditions but no verified stage 3.
+- **8.3.0** has UAF preconditions but no verified stage 3.
 - **8.4.25** is probabilistic; use the default retries.
 - **Remote proof is not guaranteed.** `id>p1` only works if the webroot is
   writable and the file is served at `/p1`.

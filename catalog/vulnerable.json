@@ -1,6 +1,6 @@
 {
   "source": "ANALISIS_PHP2SHELL.md, section 2 (fixed releases) and section 1 (CVEs)",
-  "updated": "2026-10-21",
+  "updated": "2026-10-23",
   "branches": [
     {
       "branch": "5.4",
@@ -98,39 +98,195 @@
     }
   ],
   "profiles": {
-    "8.4.26": {
-      "file": "profiles/8.4.26-bookworm.json",
-      "build": "php:8.4.26-apache (Debian bookworm, mod_php, prefork)",
-      "rce": true,
-      "verified": true
-    },
-    "8.3.33": {
-      "file": "profiles/8.3.33-wordpress.json",
-      "build": "wordpress:7.1.1-apache (PHP 8.3.33, mod_php, prefork)",
+    "7.4.33/aarch64": {
+      "file": "profiles/7.4.33-bookworm-aarch64.json",
+      "build": "7.4.33 bookworm aarch64",
       "rce": false,
       "verified": false,
-      "note": "stages 1-2 leaked; stage 3 not calibrated"
+      "note": "offsets extracted; stage-1 leak not reproduced"
     },
-    "8.5.11": {
-      "file": "profiles/8.5.11-bookworm-aarch64.json",
-      "build": "php:8.5.11-apache (bookworm, mod_php, prefork)",
-      "rce": true,
-      "verified": true
-    },
-    "8.3.35": {
-      "file": "profiles/8.3.35-bookworm-aarch64.json",
-      "build": "php:8.3.35-apache (bookworm, mod_php, prefork)",
+    "7.4.33/amd64": {
+      "file": "profiles/7.4.33-buster-amd64.json",
+      "build": "7.4.33 buster amd64",
       "rce": false,
       "verified": false,
-      "note": "stages 1-2 leaked; stage 3 not calibrated"
+      "note": "offsets extracted; stage-1 leak not reproduced"
     },
-    "8.2.34": {
+    "8.0.30/aarch64": {
+      "file": "profiles/8.0.30-bookworm-aarch64.json",
+      "build": "8.0.30 bookworm aarch64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.1.34/aarch64": {
+      "file": "profiles/8.1.34-bookworm-aarch64.json",
+      "build": "8.1.34 bookworm aarch64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.1.34/amd64": {
+      "file": "profiles/8.1.34-bullseye-amd64.json",
+      "build": "8.1.34 bullseye amd64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.2.28/amd64": {
+      "file": "profiles/8.2.28-bookworm-amd64.json",
+      "build": "8.2.28 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.2.34/aarch64": {
       "file": "profiles/8.2.34-bookworm-aarch64.json",
-      "build": "php:8.2.34-apache (bookworm, mod_php, prefork)",
+      "build": "8.2.34 bookworm aarch64",
       "rce": false,
       "verified": false,
-      "note": "offsets extracted; heap leak not reproduced"
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.2.34/amd64": {
+      "file": "profiles/8.2.34-bookworm-amd64.json",
+      "build": "8.2.34 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.3.0/lab": {
+      "file": "profiles/8.3.0-bookworm.json",
+      "build": "8.3.0 bookworm",
+      "rce": false,
+      "verified": false,
+      "note": "lab build (Dockerfile), not the official image"
+    },
+    "8.3.20/amd64": {
+      "file": "profiles/8.3.20-bookworm-amd64.json",
+      "build": "8.3.20 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 leak only; stage-2 sweep found no libphp pointer"
+    },
+    "8.3.33/lab": {
+      "file": "profiles/8.3.33-wordpress.json",
+      "build": "8.3.33 wordpress",
+      "rce": false,
+      "verified": false,
+      "note": "wordpress:7.1.1-apache, not the php image"
+    },
+    "8.3.35/aarch64": {
+      "file": "profiles/8.3.35-bookworm-aarch64.json",
+      "build": "8.3.35 bookworm aarch64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 and stage-2 leaks reproduce; stage-3 layout not found"
+    },
+    "8.3.35/amd64": {
+      "file": "profiles/8.3.35-bookworm-amd64.json",
+      "build": "8.3.35 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 and stage-2 leaks reproduce; stage-3 layout not found"
+    },
+    "8.4.10/amd64": {
+      "file": "profiles/8.4.10-bookworm-amd64.json",
+      "build": "8.4.10 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.4.2/amd64": {
+      "file": "profiles/8.4.2-bookworm-amd64.json",
+      "build": "8.4.2 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "offsets extracted; stage-1 leak not reproduced"
+    },
+    "8.4.20/amd64": {
+      "file": "profiles/8.4.20-bookworm-amd64.json",
+      "build": "8.4.20 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.4.25/aarch64": {
+      "file": "profiles/8.4.25-bookworm-aarch64.json",
+      "build": "8.4.25 bookworm aarch64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.4.25/amd64": {
+      "file": "profiles/8.4.25-bookworm-amd64.json",
+      "build": "8.4.25 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.4.26/amd64": {
+      "file": "profiles/8.4.26-bookworm-amd64.json",
+      "build": "8.4.26 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.4.5/amd64": {
+      "file": "profiles/8.4.5-bookworm-amd64.json",
+      "build": "8.4.5 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 leak only; stage-2 sweep found no libphp pointer"
+    },
+    "8.5.0/amd64": {
+      "file": "profiles/8.5.0-bookworm-amd64.json",
+      "build": "8.5.0 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 and stage-2 leaks reproduce; stage-3 layout not found"
+    },
+    "8.5.0/lab": {
+      "file": "profiles/8.5.0-bookworm.json",
+      "build": "8.5.0 bookworm",
+      "rce": false,
+      "verified": false,
+      "note": "lab build (Dockerfile), not the official image"
+    },
+    "8.5.10/aarch64": {
+      "file": "profiles/8.5.10-bookworm-aarch64.json",
+      "build": "8.5.10 bookworm aarch64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.5.10/amd64": {
+      "file": "profiles/8.5.10-bookworm-amd64.json",
+      "build": "8.5.10 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.5.11/aarch64": {
+      "file": "profiles/8.5.11-bookworm-aarch64.json",
+      "build": "8.5.11 bookworm aarch64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.5.11/amd64": {
+      "file": "profiles/8.5.11-bookworm-amd64.json",
+      "build": "8.5.11 bookworm amd64",
+      "rce": true,
+      "verified": true,
+      "note": "full chain reproduced (command proof)"
+    },
+    "8.5.5/amd64": {
+      "file": "profiles/8.5.5-bookworm-amd64.json",
+      "build": "8.5.5 bookworm amd64",
+      "rce": false,
+      "verified": false,
+      "note": "stage-1 and stage-2 leaks reproduce; stage-3 layout not found"
     }
   },
-  "coverage_note": "A version listed in a vulnerable branch is exposed, but it is exploitable only when a verified profile exists for that exact build. Vendor backports cannot be inferred from the version string."
+  "coverage_note": "A version listed in a vulnerable branch is exposed, but it is exploitable only when a verified profile exists for that exact build. Offsets alone (docs/offset-inventory.md) do not make a build exploitable. Vendor backports cannot be inferred from the version string."
 }

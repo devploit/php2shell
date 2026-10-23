@@ -1,0 +1,37 @@
+{
+  "name": "php-8.3.20-bookworm-amd64",
+  "php_version": "8.3.20",
+  "branch": "8.3",
+  "fixed_in": "8.3.36",
+  "sapi": "apache2handler",
+  "arch": "amd64",
+  "distro": "debian",
+  "verified": false,
+  "rce": false,
+  "oom_mb": 12,
+  "upstream_profile": "bookworm",
+  "libphp": {
+    "zif_system": "0x3a21d0",
+    "zval_ptr_dtor": "0x491bd0",
+    "htdata": null
+  },
+  "stages": {
+    "stage1_n": 892,
+    "stage1_forge_len": 63,
+    "stage2_t": null,
+    "stage2_v": 16,
+    "stage3_pads": null,
+    "stage3_carrier": null
+  },
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On (web SAPI, stage-1 leak succeeded)",
+    "session_upload_progress": "On",
+    "workers": 1
+  },
+  "measured": {
+    "chunk_base": "0x7f1f5a200000",
+    "libphp_base": null
+  },
+  "status": "calibration failed: heap/libphp leak not reproduced"
+}

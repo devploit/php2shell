@@ -5,18 +5,54 @@ a build still needs heap calibration before the chain can run.
 
 | Image | PHP | Arch | `zif_system` | `zval_ptr_dtor` | libphp sha256 | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| php:7.4-apache | 7.4.33 | aarch64 | 0x309640 | 0x3f6024 | 4cb16c7db838 | offsets extracted; heap not calibrated |
-| php:8.0-apache | 8.0.30 | aarch64 | 0x31ef70 | 0x40ddb0 | 35d769430309 | offsets extracted; heap not calibrated |
-| php:8.1-apache | 8.1.34 | aarch64 | 0x341e08 | 0x42e7a0 | f7640ea4ad0a | offsets extracted; heap not calibrated |
+| php:7.4-apache | 7.4.33 | aarch64 | 0x309640 | 0x3f6024 | 4cb16c7db838 | heap calibrated; leak not reproduced |
+| php:7.4-apache | 7.4.33 | amd64 | 0x335850 | 0x417d60 | 5692da4ee4ab | heap calibrated; leak not reproduced |
+| php:8.0-apache | 8.0.30 | aarch64 | 0x31ef70 | 0x40ddb0 | 35d769430309 | heap calibrated; leak not reproduced |
+| php:8.0-apache | 8.0.30 | amd64 | 0x3495d0 | 0x4319a0 | 0f2d31b76eb1 | offsets extracted; heap not calibrated |
+| php:8.1-apache | 8.1.34 | aarch64 | 0x341e08 | 0x42e7a0 | f7640ea4ad0a | heap calibrated; leak not reproduced |
+| php:8.1-apache | 8.1.34 | amd64 | 0x36f470 | 0x457150 | d92ab65c24d3 | heap calibrated; leak not reproduced |
 | php:8.2.0-apache | 8.2.0 | aarch64 | 0x364f30 | 0x4520c0 | 322c858efd29 | offsets extracted; heap not calibrated |
-| php:8.2.34-apache | 8.2.34 | aarch64 | 0x36ff48 | 0x4606c0 | db406c7f48eb | offsets extracted; heap not calibrated |
+| php:8.2.28-apache | 8.2.28 | amd64 | 0x3928b0 | 0x47b630 | b9d2697c2be2 | heap calibrated; leak not reproduced |
+| php:8.2.34-apache | 8.2.34 | amd64 | 0x39b8a0 | 0x487650 | 42ae9f69550e | heap calibrated; leak not reproduced |
+| php:8.2.34-apache | 8.2.34 | aarch64 | 0x36ff48 | 0x4606c0 | db406c7f48eb | heap calibrated; leak not reproduced |
 | php:8.3.0-apache | 8.3.0 | aarch64 | 0x3771f0 | 0x467cf0 | c1b72099fc8c | offsets extracted; heap not calibrated |
-| php:8.3.35-apache | 8.3.35 | aarch64 | 0x377428 | 0x46fcc0 | 1f2bc20742e6 | offsets extracted; heap not calibrated |
-| php:8.4.25-apache | 8.4.25 | aarch64 | 0x42fa30 | 0x637ae0 | 2d2388a4b0af | offsets extracted; heap not calibrated |
-| php:8.4.26-apache | 8.4.26 | amd64 | 0x465370 | 0x65eb60 | 51663cf883b1 | offsets extracted; heap not calibrated |
+| php:8.3.20-apache | 8.3.20 | amd64 | 0x3a21d0 | 0x491bd0 | 2604b7aaee26 | heap calibrated; stage-1 leak only |
+| php:8.3.35-apache | 8.3.35 | aarch64 | 0x377428 | 0x46fcc0 | 1f2bc20742e6 | heap calibrated; leaks only |
+| php:8.3.35-apache | 8.3.35 | amd64 | 0x3ac080 | 0x49ec50 | ea069762fa22 | heap calibrated; leaks only |
+| php:8.4.2-apache | 8.4.2 | amd64 | 0x4398b0 | 0x628ea0 | 40d65d5f25ce | heap calibrated; leak not reproduced |
+| php:8.4.5-apache | 8.4.5 | amd64 | 0x43b660 | 0x62c420 | 8265285f9025 | heap calibrated; stage-1 leak only |
+| php:8.4.6-apache | 8.4.6 | amd64 | 0x43b940 | 0x62ca40 | 77a71f443d52 | heap calibrated; stage-1 leak only |
+| php:8.4.7-apache | 8.4.7 | amd64 | 0x43b920 | 0x62cd60 | f7f4da8f78fd | heap calibrated; stage-1 leak only |
+| php:8.4.8-apache | 8.4.8 | amd64 | 0x43b940 | 0x62cd10 | d8d7da3c6aca | heap calibrated; leaks only |
+| php:8.4.10-apache | 8.4.10 | amd64 | 0x43b7d0 | 0x62cf70 | a6b5a2e606b3 | heap calibrated; RCE verified |
+| php:8.4.11-apache | 8.4.11 | amd64 | 0x446cb0 | 0x63d2e0 | fe10341d35be | heap calibrated; RCE verified |
+| php:8.4.12-apache | 8.4.12 | amd64 | 0x446cf0 | 0x63dc20 | e6624242a76d | heap calibrated; stage-1 leak only |
+| php:8.4.13-apache | 8.4.13 | amd64 | 0x445bf0 | 0x63cbe0 | f736a943df70 | heap calibrated; leaks only |
+| php:8.4.14-apache | 8.4.14 | amd64 | 0x445c30 | 0x63d020 | 8a0e20af698c | heap calibrated; stage-1 leak only |
+| php:8.4.15-apache | 8.4.15 | amd64 | 0x445f70 | 0x63d420 | 6a36c3e76d62 | heap calibrated; stage-1 leak only |
+| php:8.4.16-apache | 8.4.16 | amd64 | 0x446930 | 0x63de20 | d8b25ea74955 | heap calibrated; stage-1 leak only |
+| php:8.4.17-apache | 8.4.17 | amd64 | 0x446cb0 | 0x63e520 | 557ac34f8abe | heap calibrated; stage-1 leak only |
+| php:8.4.18-apache | 8.4.18 | amd64 | 0x446ff0 | 0x63eb20 | b8b22ade4741 | heap calibrated; stage-1 leak only |
+| php:8.4.19-apache | 8.4.19 | amd64 | 0x4472f0 | 0x63efe0 | f56ef68faa09 | heap calibrated; RCE verified |
+| php:8.4.20-apache | 8.4.20 | amd64 | 0x447530 | 0x63f9e0 | 9324d5274788 | heap calibrated; RCE verified |
+| php:8.4.25-apache | 8.4.25 | aarch64 | 0x42fa30 | 0x637ae0 | 2d2388a4b0af | heap calibrated; RCE verified |
+| php:8.4.25-apache | 8.4.25 | amd64 | 0x464c70 | 0x65dc60 | a70977eb3ed3 | heap calibrated; RCE verified |
+| php:8.4.26-apache | 8.4.26 | amd64 | 0x465370 | 0x65eb60 | 51663cf883b1 | heap calibrated; RCE verified |
+| php:8.5.0-apache | 8.5.0 | amd64 | 0x56a420 | 0x781fe0 | 4fa99c0490a0 | heap calibrated; RCE verified |
 | php:8.5.0-apache | 8.5.0 | aarch64 | 0x503510 | 0x731d80 | 5910f3f12fbd | offsets extracted; heap not calibrated |
-| php:8.5.10-apache | 8.5.10 | aarch64 | 0x52e130 | 0x75d360 | 5f080d44d3f8 | offsets extracted; heap not calibrated |
-| php:8.5.11-apache | 8.5.11 | aarch64 | 0x5314f0 | 0x761b80 | 64a617aeb392 | offsets extracted; heap not calibrated |
+| php:8.5.1-apache | 8.5.1 | amd64 | 0x56a9a0 | 0x7826a0 | 17ab01d2e00c | heap calibrated; RCE verified |
+| php:8.5.2-apache | 8.5.2 | amd64 | 0x56bca0 | 0x783de0 | 592c925143d1 | heap calibrated; RCE verified |
+| php:8.5.3-apache | 8.5.3 | amd64 | 0x56d1e0 | 0x785620 | e250fa12dd83 | heap calibrated; RCE verified |
+| php:8.5.4-apache | 8.5.4 | amd64 | 0x5705e0 | 0x788ba0 | e9408fda9ee9 | heap calibrated; RCE verified |
+| php:8.5.5-apache | 8.5.5 | amd64 | 0x570de0 | 0x789ae0 | 5c6f6a0e1c43 | heap calibrated; RCE verified |
+| php:8.5.6-apache | 8.5.6 | amd64 | 0x595160 | 0x7ae6e0 | 8f430f9feb06 | heap calibrated; RCE verified |
+| php:8.5.7-apache | 8.5.7 | amd64 | 0x5960e0 | 0x7b0460 | 641b7f6241cf | heap calibrated; RCE verified |
+| php:8.5.8-apache | 8.5.8 | amd64 | 0x596620 | 0x7b0d60 | 5b458d2bb61f | heap calibrated; RCE verified |
+| php:8.5.9-apache | 8.5.9 | amd64 | 0x598160 | 0x7b29a0 | 4f7ae4a32849 | heap calibrated; RCE verified |
+| php:8.5.10-apache | 8.5.10 | amd64 | 0x598d60 | 0x7b3860 | 949ee4ed17c7 | heap calibrated; RCE verified |
+| php:8.5.10-apache | 8.5.10 | aarch64 | 0x52e130 | 0x75d360 | 5f080d44d3f8 | heap calibrated; RCE verified |
+| php:8.5.11-apache | 8.5.11 | aarch64 | 0x5314f0 | 0x761b80 | 64a617aeb392 | heap calibrated; RCE verified |
+| php:8.5.11-apache | 8.5.11 | amd64 | 0x5996e0 | 0x7b47a0 | 2c80ca2a245c | heap calibrated; RCE verified |
 
 ## Notes
 

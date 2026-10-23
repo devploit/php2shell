@@ -20,7 +20,7 @@ ROOT = os.path.dirname(HERE)
 PROFILES = os.path.join(ROOT, "profiles")
 
 COLUMNS = ("PHP", "build", "zif_system", "zval_ptr_dtor", "htdata",
-           "stage1_n", "forge", "stage2_t", "RCE")
+           "stage1_n", "forge", "stage2_t", "stage3", "RCE")
 
 
 def load_profiles(directory: str):
@@ -41,9 +41,10 @@ def load_profiles(directory: str):
             "zif_system": lib.get("zif_system") or "-",
             "zval_ptr_dtor": lib.get("zval_ptr_dtor") or "-",
             "htdata": lib.get("htdata") or "-",
-            "stage1_n": stages.get("stage1_n", "-"),
-            "forge": stages.get("stage1_forge_len", "-"),
-            "stage2_t": stages.get("stage2_t", "-"),
+            "stage1_n": stages.get("stage1_n") if stages.get("stage1_n") is not None else "-",
+            "forge": stages.get("stage1_forge_len") if stages.get("stage1_forge_len") is not None else "-",
+            "stage2_t": stages.get("stage2_t") if stages.get("stage2_t") is not None else "-",
+            "stage3": stages.get("stage3_mode") or "-",
             "rce": bool(data.get("rce")),
             "status": data.get("status", ""),
             "file": os.path.relpath(path, ROOT),
@@ -78,6 +79,7 @@ def main() -> int:
             str(r["stage1_n"]).ljust(widths["stage1_n"]),
             str(r["forge"]).ljust(widths["forge"]),
             str(r["stage2_t"]).ljust(widths["stage2_t"]),
+            str(r["stage3"]).ljust(widths["stage3"]),
             ("yes" if r["rce"] else "no").ljust(widths["RCE"]),
         ]))
     verified = sum(1 for r in rows if r["rce"])

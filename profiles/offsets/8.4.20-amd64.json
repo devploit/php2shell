@@ -1,0 +1,13 @@
+{
+  "image": "php:8.4.20-apache",
+  "php_version": "8.4.20",
+  "branch": "8.4",
+  "arch": "amd64",
+  "libphp": {
+    "zif_system": "0x447530",
+    "zval_ptr_dtor": "0x63f9e0",
+    "ps_globals": "0x12e4880"
+  },
+  "libphp_sha256": "9324d527478896a08f0eeb0c0c9db1b6a7a716ac5af912fbbc17722224a893b8",
+  "status": "offsets extracted; heap not calibrated"
+}

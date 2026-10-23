@@ -50,6 +50,34 @@ def patch_params(repo: str) -> bool:
     return True
 
 
+def patch_cookie_decode(repo: str) -> bool:
+    """Decode '+' as a space in the leaked Set-Cookie value.
+
+    PHP urlencode()s the session id for the cookie header, and that encoding
+    writes a space byte (0x20) as '+'. urllib's unquote_to_bytes() leaves '+'
+    untouched, so any leaked pointer whose address contains a 0x20 byte was
+    read back 0xB00000000 too high (0x20 -> 0x2b) and every stage-3 address
+    derived from it missed. Rewriting '+' to '%20' before unquoting restores
+    the real bytes; a true '+' byte in memory arrives as '%2B' and decodes
+    back to '+' either way, so the rewrite is lossless.
+    """
+    found = _read(repo)
+    if not found:
+        return False
+    path, source = found
+    original = ('    return urllib.parse.unquote_to_bytes'
+                '(m.group(1).decode("latin1"))')
+    if original not in source:
+        return False
+    source = source.replace(
+        original,
+        '    raw = m.group(1).replace(b"+", b"%20")\n'
+        '    return urllib.parse.unquote_to_bytes(raw.decode("latin1"))')
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(source)
+    return True
+
+
 def patch_tls(repo: str) -> bool:
     """Accept the lab certificate and always send SNI.
 
