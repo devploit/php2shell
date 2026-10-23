@@ -148,6 +148,30 @@
             "null"
           ],
           "description": "Whether the 167-byte carrier string is used. Null when stage 3 is not calibrated."
+        },
+        "stage3_cookie": {
+          "type": "boolean",
+          "description": "Send Cookie: PHPSESSID=<32 bytes> on the stage-3 first request (keeps PS(id) valid and participates in the heap phase on some builds)."
+        },
+        "stage3_wfields": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Small fill fields (5-char name, 1-byte value) prepended to the stage-3 first request."
+        },
+        "stage3_fake_len": {
+          "type": "integer",
+          "minimum": 24,
+          "description": "Byte length of the fake-reference zend_string value (31 = chars land at R0 on the deb13-apxs2 build; upstream default 55 = chars at R0+8)."
+        },
+        "stage3_fakes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of fake-reference fields in the stage-3 reclaim run."
+        },
+        "stage3_b_name_len": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Name length of the stage-3 second-request fields (3-char names shift the reclaim phase versus 31-char names)."
         }
       },
       "additionalProperties": false
