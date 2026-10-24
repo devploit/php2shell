@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_matrix.py — profile factory for the PHP2Shell RCE chain.
 
@@ -18,7 +17,6 @@ Authorized testing only.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir, prepare_lab_out
 
 import argparse
 import json
@@ -29,6 +27,8 @@ import subprocess
 import sys
 import time
 import urllib.request
+
+from php2shell_paths import default_repo_dir, prepare_lab_out
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -131,7 +131,8 @@ def run_build(build, args) -> dict:
     rce = False
     if os.path.isfile(profile):
         try:
-            data = json.load(open(profile, encoding="utf-8"))
+            with open(profile, encoding="utf-8") as handle:
+                data = json.load(handle)
             rce = bool(data.get("rce"))
             status = "rce" if rce else "leaks-only"
         except ValueError:

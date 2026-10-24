@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 from pathlib import Path
 
@@ -15,10 +16,8 @@ def prepare_lab_out(path: str | Path) -> str:
     """Create a lab output directory the container user can write to."""
     target = Path(path)
     target.mkdir(parents=True, exist_ok=True)
-    try:
+    with contextlib.suppress(OSError):
         target.chmod(0o777)
-    except OSError:
-        pass
     return str(target)
 
 

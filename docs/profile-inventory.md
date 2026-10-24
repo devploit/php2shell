@@ -8,13 +8,21 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 | 8.0.30 | php-8.0.30-bookworm-aarch64 | 0x31ef70 | 0x40ddb0 | - | - | - | - | no |
 | 8.1.34 | php-8.1.34-bookworm-aarch64 | 0x341e08 | 0x42e7a0 | - | - | - | - | no |
 | 8.2.34 | php-8.2.34-bookworm-aarch64 | 0x36ff48 | 0x4606c0 | - | 0 | 0 | 406 | no |
+| 8.3.0 | php-8.3.0-bookworm | 0x3771f0 | 0x467cf0 | - | - | - | 406 | no |
 | 8.3.33 | php-8.3.33-wordpress-mod_php | 0x377248 | 0x4737e0 | - | 815 | 63 | 406 | no |
 | 8.3.35 | php-8.3.35-bookworm-aarch64 | 0x377428 | 0x46fcc0 | - | 841 | 63 | 406 | no |
 | 8.4.25 | php-8.4.25-bookworm-aarch64 | 0x42fa30 | 0x637ae0 | 0x690d8 | 841 | 63 | 406 | yes |
 | 8.4.26 | php-8.4.26-bookworm-amd64 | 0x465370 | 0x65eb60 | 0x690d8 | 841 | 79 | 406 | yes |
+| 8.4.26 | php-8.4.26-fpm | 0x386660 | 0x54a0d0 | - | - | - | - | yes |
+| 8.5.0 | php-8.5.0-bookworm | 0x503510 | 0x731d80 | - | 841 | 63 | 406 | no |
 | 8.5.10 | php-8.5.10-bookworm-aarch64 | 0x52e130 | 0x75d360 | 0x690d8 | 841 | 63 | 406 | yes |
-| 8.5.11 | php-8.5.11-bookworm-amd64 | 0x5996e0 | 0x7b47a0 | 0x690d8 | 841 | 63 | 406 | yes |
 | 8.5.11 | php-8.5.11-bookworm-aarch64 | 0x5314f0 | 0x761b80 | 0x690d8 | 841 | 63 | 406 | yes |
+| 8.5.11 | php-8.5.11-bookworm-amd64 | 0x5996e0 | 0x7b47a0 | 0x690d8 | 841 | 63 | 406 | yes |
+
+**14 profiles, 6 with verified RCE** (5 Apache/mod_php + 1 PHP-FPM). The FPM
+row is an amd64 user-prefix build; its stage columns do not apply. The
+`no-oracle` path leaks the chunk and PIE bases over HTTP from the stale session
+string; the lab-only `endgame` can still read them through `/proc`.
 
 ## Per-build notes
 
@@ -37,6 +45,18 @@ This is the 8.5 branch, fixed in 8.5.12.
 
 `php:8.4.26-apache`, bookworm. Verified 3/3 manually and through the factory.
 Fixed in 8.4.27. This is the profile used against the local 8.4.26 laboratory.
+
+### PHP 8.4.26 FPM — RCE verified
+
+nginx + PHP-FPM, amd64, user-prefix build of the php-8.4.26 source tarball
+(no Docker image; built by `lab/fpm/build_php.sh`). Exploits the stale
+`BG(unserialize)` state instead of the Apache progress-cache chain — the
+stage columns do not apply. `basic_globals=0xa04660`, `struct_size=8216`;
+the 8216-byte struct recycles between two heap slots and a mismatch
+self-corrects within four retries. Verified `uid=...` proof in the local
+laboratory; `php2shell_fpm.py patchcheck` confirms 8.4.27 is clean
+(`level=0`, workers survive). Fixed in 8.4.27. See
+[docs/fpm-chain.md](fpm-chain.md).
 
 ### PHP 8.3.35 — leaks only
 

@@ -20,9 +20,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 import php2shell_auto as auto  # noqa: E402
-import php2shell_ui as ui  # noqa: E402
-import php2shell_paths as paths  # noqa: E402
 import php2shell_calibrate as cal  # noqa: E402
+import php2shell_paths as paths  # noqa: E402
+import php2shell_ui as ui  # noqa: E402
 
 
 class ClassificationTests(unittest.TestCase):
@@ -147,7 +147,7 @@ class InventoryTests(unittest.TestCase):
     def test_profiles_are_valid(self):
         names = set()
         for path in sorted((ROOT / "profiles").glob("*.json")):
-            if path.name == "schema.json":
+            if path.name in ("schema.json", "fpm-schema.json"):
                 continue
             data = json.loads(path.read_text())
             self.assertIn("name", data, path)
@@ -159,9 +159,15 @@ class InventoryTests(unittest.TestCase):
             self.assertNotIn(data["name"], names, f"duplicate profile name: {path}")
             names.add(data["name"])
             if data.get("rce"):
-                self.assertIsNotNone(data["libphp"].get("htdata"), path)
-                self.assertTrue(data["stages"].get("stage3_pads"), path)
                 self.assertIsInstance(data.get("oom_mb"), int, path)
+                if data.get("sapi") == "fpm":
+                    # the FPM chain forges the stale var_hash directly; it
+                    # does not use the Apache stage-3 htdata carrier
+                    self.assertIsNotNone(data["fpm"].get("basic_globals"), path)
+                    self.assertIsNotNone(data["fpm"].get("struct_size"), path)
+                else:
+                    self.assertIsNotNone(data["libphp"].get("htdata"), path)
+                    self.assertTrue(data["stages"].get("stage3_pads"), path)
 
     def test_profile_schema_if_present(self):
         schema = ROOT / "profiles" / "schema.json"

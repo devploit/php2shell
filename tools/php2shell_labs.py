@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_labs.py — disposable local laboratories for the PHP builds in the
 profile/offset inventory.
@@ -22,14 +21,16 @@ refused by the dispatcher.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir, prepare_lab_out
 
 import argparse
+import contextlib
 import os
 import subprocess
 import sys
 import time
 import urllib.request
+
+from php2shell_paths import default_repo_dir, prepare_lab_out
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -112,10 +113,8 @@ def test():
             results.append((version, "not running", ""))
             continue
         proof = os.path.join(OUT, version, "p1")
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(proof)
-        except OSError:
-            pass
         cmd = [sys.executable, os.path.join(HERE, "php2shell_auto.py"),
                "-u", f"http://127.0.0.1:{port}/index.php",
                "-c", "id>/out/p1", "--repo-dir", REPO,
@@ -125,9 +124,10 @@ def test():
         output = (result.stdout + result.stderr).strip().splitlines()
         print("\n".join(output[-6:]), flush=True)
         if result.returncode == 0 and os.path.isfile(proof):
-            results.append((version, "RCE", open(proof).read().strip()))
+            with open(proof) as handle:
+                results.append((version, "RCE", handle.read().strip()))
         else:
-            results.append((version, "no RCE (exit %d)" % result.returncode, ""))
+            results.append((version, f"no RCE (exit {result.returncode})", ""))
     print("\n=== summary ===")
     for version, status_text, proof in results:
         print(f"  {version:8} {status_text:24} {proof}")

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_rce.py — launcher for the verified PHP2Shell RCE chain.
 
@@ -36,8 +35,6 @@ not claim RCE on PHP 8.3.33.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir
-from php2shell_upstream import patch_params, patch_tls
 
 import argparse
 import ipaddress
@@ -46,6 +43,9 @@ import socket
 import subprocess
 import sys
 import urllib.parse
+
+from php2shell_paths import default_repo_dir
+from php2shell_upstream import patch_params, patch_tls
 
 DEFAULT_DIR = default_repo_dir()
 

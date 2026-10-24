@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/devploit/php2shell/blob/main/profiles/fpm-schema.json",
+  "title": "PHP2Shell nginx + PHP-FPM profile",
+  "type": "object",
+  "required": [
+    "name",
+    "php_version",
+    "branch",
+    "fixed_in",
+    "sapi",
+    "verified",
+    "rce",
+    "distro",
+    "arch",
+    "libphp",
+    "fpm",
+    "stages",
+    "config",
+    "status",
+    "oom_mb"
+  ],
+  "properties": {
+    "name": {"type": "string"},
+    "php_version": {"type": "string"},
+    "branch": {"type": "string"},
+    "fixed_in": {"type": "string"},
+    "sapi": {"const": "fpm"},
+    "verified": {"type": "boolean"},
+    "rce": {"type": "boolean"},
+    "distro": {"type": "string"},
+    "arch": {"type": "string"},
+    "libphp": {
+      "type": "object",
+      "required": ["zif_system", "zval_ptr_dtor"],
+      "properties": {
+        "zif_system": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+        "zval_ptr_dtor": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+        "htdata": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "fpm": {
+      "type": "object",
+      "required": [
+        "basic_globals",
+        "bg_unserialize_data_off",
+        "bg_unserialize_level_off",
+        "struct_size",
+        "reclaim_pads",
+        "reclaim_size",
+        "oracle",
+        "no_oracle",
+        "leak"
+      ],
+      "properties": {
+        "basic_globals": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+        "bg_unserialize_data_off": {"type": "integer", "minimum": 0},
+        "bg_unserialize_level_off": {"type": "integer", "minimum": 0},
+        "struct_size": {"type": "integer", "minimum": 1},
+        "reclaim_pads": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1}
+        },
+        "reclaim_size": {"type": "integer", "minimum": 1},
+        "oracle": {"type": "string"},
+        "no_oracle": {
+          "type": "object",
+          "required": ["reclaim_size", "candidates", "bases"],
+          "properties": {
+            "reclaim_pads": {
+              "type": "array",
+              "items": {"type": "integer", "minimum": 1}
+            },
+            "reclaim_size": {"type": "integer", "minimum": 1},
+            "candidates": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["d_off", "k"],
+                "properties": {
+                  "d_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+                  "k": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "bases": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "leak": {
+          "type": "object",
+          "required": [
+            "arm_path",
+            "pads",
+            "size",
+            "header_content_off",
+            "read_len",
+            "chunk_ptr_off",
+            "chunk_base_off",
+            "pie_ptr_off",
+            "pie_base_off"
+          ],
+          "properties": {
+            "arm_path": {"type": "string"},
+            "pads": {
+              "type": "array",
+              "items": {"type": "integer", "minimum": 1}
+            },
+            "size": {"type": "integer", "minimum": 1},
+            "header_content_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "read_len": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "chunk_ptr_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "chunk_base_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "pie_ptr_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "pie_base_off": {"type": "string", "pattern": "^0x[0-9a-fA-F]+$"},
+            "bases": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "stages": {"type": "object"},
+    "config": {
+      "type": "object",
+      "required": ["memory_limit", "display_errors", "session_upload_progress", "workers"],
+      "properties": {
+        "memory_limit": {"type": "integer", "minimum": 1},
+        "display_errors": {"type": "string"},
+        "session_upload_progress": {"type": "string"},
+        "workers": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "status": {"type": "string"},
+    "oom_mb": {"type": "integer", "minimum": 1},
+    "layout": {
+      "type": "object",
+      "description": "struct layouts of the build, derived from its headers",
+      "required": ["unserialize_data", "var_entries", "zval", "zend_array"],
+      "properties": {
+        "unserialize_data": {
+          "type": "object",
+          "description": "php_unserialize_data; PHP <= 7.3 keeps a 'legacy' five-pointer shape with no embedded entries block",
+          "required": ["last", "size"],
+          "properties": {
+            "first": {"type": "integer", "minimum": 0},
+            "last": {"type": "integer", "minimum": 0},
+            "first_dtor": {"type": "integer", "minimum": 0},
+            "last_dtor": {"type": "integer", "minimum": 0},
+            "allowed_classes": {"type": "integer", "minimum": 0},
+            "ref_props": {"type": "integer", "minimum": 0},
+            "cur_depth": {"type": "integer", "minimum": 0},
+            "max_depth": {"type": "integer", "minimum": 0},
+            "entries": {"type": "integer", "minimum": 0},
+            "size": {"type": "integer", "minimum": 1},
+            "legacy": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "var_entries": {
+          "type": "object",
+          "properties": {
+            "used_slots": {"type": "integer", "minimum": 0},
+            "next": {"type": "integer", "minimum": 0},
+            "data": {"type": "integer", "minimum": 0},
+            "max": {"type": "integer", "minimum": 1}
+          },
+          "additionalProperties": false
+        },
+        "bg": {
+          "type": "object",
+          "properties": {
+            "unserialize_data": {"type": "integer", "minimum": 0},
+            "unserialize_level": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "zval": {"type": "object"},
+        "zend_array": {"type": "object"},
+        "zend_reference": {"type": "object"},
+        "zend_string": {"type": "object"},
+        "zend_execute_data": {"type": "object"},
+        "bucket": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

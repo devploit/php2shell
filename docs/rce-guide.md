@@ -298,14 +298,17 @@ the RCE stage and prints what is still missing.
 
 ### Profile schema (`profiles/<version>-<distro>.json`)
 
+Apache/mod_php profile:
+
 ```json
 {
+  "name": "php-8.4.26-bookworm-amd64",
   "php_version": "8.4.26",
   "branch": "8.4",
   "fixed_in": "8.4.27",
+  "sapi": "apache",
   "verified": true,
   "rce": true,
-  "upstream_profile": "bookworm",
   "libphp": { "zif_system": "0x465370", "zval_ptr_dtor": "0x65eb60", "htdata": "0x690d8" },
   "stages": {
     "stage1_n": 841, "stage1_forge_len": 79,
@@ -313,14 +316,40 @@ the RCE stage and prints what is still missing.
     "stage3_pads": [[31,31],[31,31],[31,31],[31,31],[31,31],[31,31]],
     "stage3_carrier": true
   },
-  "requirements": { "display_errors": "On", "memory_limit": "8M", "workers": 1 }
+  "oom_mb": 12
 }
 ```
 
-`rce` must stay `false` until the chain has executed a command on a replica of
-that exact build. Same PHP version built by another distribution has different
-`libphp` offsets and a different heap layout, so the version string alone is not
-a build fingerprint.
+FPM profile (no heap-leak stages; the `fpm` block carries the
+`BG(unserialize)` offsets — see [fpm-chain.md](fpm-chain.md)):
+
+```json
+{
+  "name": "php-8.4.26-fpm",
+  "php_version": "8.4.26",
+  "branch": "8.4",
+  "fixed_in": "8.4.27",
+  "sapi": "fpm",
+  "rce": true,
+  "libphp": { "zif_system": "0x386660", "zval_ptr_dtor": "0x54a0d0", "htdata": null },
+  "fpm": {
+    "basic_globals": "0xa04660",
+    "bg_unserialize_data_off": 872,
+    "bg_unserialize_level_off": 880,
+    "struct_size": 8216,
+    "reclaim_pads": [4096, 4096, 4096],
+    "reclaim_size": 12288
+  },
+  "stages": {},
+  "oom_mb": 4
+}
+```
+
+The full machine-checked schema is `profiles/schema.json`; validate with
+`make validate-profiles`. `rce` must stay `false` until the chain has
+executed a command on a replica of that exact build. Same PHP version built
+by another distribution has different offsets, so the version string alone is
+not a build fingerprint.
 
 ### Scaling to more versions
 

@@ -1,0 +1,52 @@
+name: Live FPM lab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: Build and exploit PHP ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["8.4.25", "8.4.26"]
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl tar libxml2-dev
+
+      - name: Build nginx
+        run: lab/fpm/build_nginx.sh
+
+      - name: Build PHP ${{ matrix.version }}
+        run: lab/fpm/build_php.sh ${{ matrix.version }}
+
+      - name: Start lab
+        run: python3 tools/php2shell_fpm_labs.py up --only ${{ matrix.version }}
+
+      - name: Enable ptrace for the oracle test
+        run: sudo sysctl -w kernel.yama.ptrace_scope=0
+
+      - name: Run live tests
+        env:
+          PHP2SHELL_FPM_LAB: "1"
+          PHP2SHELL_FPM_VERSION: ${{ matrix.version }}
+        run: python3 -m unittest tests.test_fpm.FpmLabIntegrationTests -v
+
+      - name: Stop lab
+        if: always()
+        run: python3 tools/php2shell_fpm_labs.py down

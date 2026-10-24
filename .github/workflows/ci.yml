@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -8,26 +8,81 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  tests:
+  test:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check tools tests
+
+      - name: Compile Python
+        run: python -m compileall -q tools tests
+
+      - name: Check shell syntax
+        run: bash -n lab/fpm/build_php.sh lab/fpm/build_nginx.sh lab/fpm/build_all.sh
+
       - name: Unit tests
         run: PYTHONDONTWRITEBYTECODE=1 python -m unittest discover -s tests -v
+
+      - name: Validate build profiles against schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          schema = json.loads(Path("profiles/schema.json").read_text())
+          for path in sorted(Path("profiles").glob("*.json")):
+              if path.name in ("schema.json", "fpm-schema.json"):
+                  continue
+              jsonschema.validate(json.loads(path.read_text()), schema)
+              print(f"{path}: valid")
+          PY
+
+      - name: Validate PHP-FPM profiles against the FPM schema
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import jsonschema
+
+          schema = json.loads(Path("profiles/fpm-schema.json").read_text())
+          for path in sorted(Path("profiles").glob("*-fpm.json")):
+              jsonschema.validate(json.loads(path.read_text()), schema)
+              print(f"{path}: valid")
+          PY
 
   secrets:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

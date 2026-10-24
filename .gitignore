@@ -4,3 +4,5 @@ __pycache__/
 vendor/
 lab/wordpress/wp/
 lab/rce/out/
+lab/fpm/runtime/
+lab/fpm/webroot/out/
