@@ -15,7 +15,7 @@ import os
 def _read(repo: str) -> tuple[str, str] | None:
     path = os.path.join(repo, "exploit.py")
     try:
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             return path, fh.read()
     except OSError:
         return None

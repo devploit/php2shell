@@ -20,22 +20,19 @@
     "stage3_pads": null,
     "stage3_carrier": null
   },
-  "requirements": {
-    "display_errors": "On",
-    "memory_limit": "8M",
-    "max_input_vars": 1000,
-    "session_upload_progress": "On",
-    "session_use_cookies": 1,
-    "session_use_strict_mode": 0,
-    "workers": 1
-  },
   "measured": {
     "chunk_base_example": "0xffffae200000",
     "libphp_base_example": "0xffffb0300000",
     "stage3_http_session_vars": "chunk+0x56180",
     "stage3_ref_buffers": "chunk+0x5d068+n*0xa0"
   },
-  "status": "stage 1 (heap leak) and stage 2 (libphp leak) reproduced; stage 3 not calibrated, no RCE",
+  "status": "stage 1 (heap leak) and stage 2 (libphp leak) reproduced; stage 3 not calibrated, no RCE (requirements observed: display_errors=On, memory_limit=8M, max_input_vars=1000, session.upload_progress=On, session.use_cookies=1, session.use_strict_mode=0, workers=1)",
   "distro": "debian",
-  "arch": "aarch64"
+  "arch": "aarch64",
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On",
+    "session_upload_progress": "On",
+    "workers": 1
+  }
 }

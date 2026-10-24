@@ -1,0 +1,1 @@
+<?php echo "OK\n";

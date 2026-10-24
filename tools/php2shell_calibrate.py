@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_calibrate.py — build a verified profile for one PHP/libphp build.
 
@@ -35,8 +34,6 @@ Authorized testing only.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir
-from php2shell_upstream import patch_params, patch_tls
 
 import argparse
 import importlib.util
@@ -48,6 +45,9 @@ import subprocess
 import sys
 import time
 import urllib.parse
+
+from php2shell_paths import default_repo_dir
+from php2shell_upstream import patch_params, patch_tls
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -109,7 +109,7 @@ def extract_symbols(repo: str, container: str) -> dict:
     subprocess.run([sys.executable, script, container], check=True)
     env = os.path.join(repo, "out", "offsets.env")
     values = {}
-    with open(env, "r", encoding="utf-8") as fh:
+    with open(env, encoding="utf-8") as fh:
         for line in fh:
             if "=" in line and not line.startswith("#"):
                 k, v = line.strip().split("=", 1)
@@ -295,7 +295,8 @@ def calibrate_stage3(mod, ex, chunk, lib, zif, proof, hints):
         except Exception as exc:
             print(f"    stage3 {name}: {exc}")
         if os.path.exists(proof) and os.path.getsize(proof) > 0:
-            print(f"[+] stage3 {name}: {open(proof).read().strip()}")
+            with open(proof) as handle:
+                print(f"[+] stage3 {name}: {handle.read().strip()}")
             return True, {"htdata": off, "pads": pads}
         print(f"    stage3 {name}: no proof")
     return False, None
