@@ -57,8 +57,8 @@ offsets-only entry. All `yes` rows use the lab configuration: Apache prefork
 `session.upload_progress=On`. Per-image offsets and `libphp` sha256 are in
 [the offset inventory](docs/offset-inventory.md). The 8.4.25 profile needs the
 default retries because its stage 3 is probabilistic. The 8.4.26 deb13/apxs2
-row is a **contributor-reported source build**, not an official image: its
-stage-3 phase is instance-dependent (the contributor reported 4/4 runs on one Apache master and
+row is a **contributor-reported, not independently confirmed source build**,
+not an official image: its stage-3 phase is instance-dependent (the contributor reported 4/4 runs on one Apache master and
 0/5+ on others), so treat `rce: true` as “reproduced on the reporter's lab” and
 retry on a fresh worker/master. Because two 8.4.26 amd64 profiles exist, the
 dispatcher requires `--profile deb13-apxs2` for this build.
