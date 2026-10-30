@@ -30,7 +30,7 @@
       [31, 31],
       [31, 31]
     ],
-    "stage3_carrier": true,
+    "stage3_carrier": false,
     "stage3_cookie": true,
     "stage3_wfields": 5,
     "stage3_fake_len": 31,

@@ -64,7 +64,16 @@ if pads_env:
 Profiles carry a `stage3_pads` list of `[name_len, value_len]` pairs;
 `php2shell_auto.py` serializes it as `a:b,a:b,...` into `P2S_STAGE3_PADS` and
 `php2shell_calibrate.py --stage3-pads` accepts an explicit spec of the same
-form with repetition factors, e.g. `4:4x5,31:31x6`.
+form with repetition factors, e.g. `4:4x5,31:31x6`. An explicit spec is tried
+on its own (with the three known `htdata` slots) and does not require
+`--stage3-htdata`.
+
+Explicit pads default to the **non-carrier** branch (`stage3_carrier: false`,
+`upstream_profile: lab`): that is the branch where `stage3_fake_len`,
+`stage3_fakes` and `stage3_b_name_len` are applied. Pass
+`--stage3-carrier carrier` to calibrate the 15-byte upstream carrier instead.
+The generated profile's `upstream_profile` follows the measured branch, so the
+dispatcher runs the same branch that was calibrated.
 
 The other stage-3 composition knobs (all optional profile fields, all
 environment-driven the same way):

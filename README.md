@@ -35,6 +35,7 @@ not match the profile.
 | PHP 8.5.11 amd64 | `php:8.5.11-apache` | `php-8.5.11-bookworm-amd64` | yes | yes | **yes** | separate offsets, same `htdata` |
 | PHP 8.5.10 aarch64 | `php:8.5.10-apache` | `php-8.5.10-bookworm-aarch64` | yes | yes | **yes** | `uid=33(www-data)` |
 | PHP 8.4.26 amd64 | `php:8.4.26-apache` | `php-8.4.26-bookworm-amd64` | yes | yes | **yes** | reference build |
+| PHP 8.4.26 deb13/apxs2 amd64 | source build (Debian 13, Apache 2.4.69 apxs2) | `php-8.4.26-deb13-apxs2-amd64` | yes | yes | **yes** | third stage-3 layout; instance-dependent; requires `--profile deb13-apxs2` |
 | PHP 8.4.25 aarch64 | `php:8.4.25-apache` | `php-8.4.25-bookworm-aarch64` | yes | yes | **yes** | probabilistic stage 3; retries |
 | PHP 8.5.0 aarch64 | `php:8.5.0-apache` | `php-8.5.0-bookworm` | yes | yes | no | stage-3 layout not found |
 | PHP 8.3.35 aarch64 | `php:8.3.35-apache` | `php-8.3.35-bookworm-aarch64` | yes | yes | no | stage-3 reference alive |
@@ -46,7 +47,7 @@ not match the profile.
 | PHP 7.4.33 aarch64 | `php:7.4-apache` | `php-7.4.33-bookworm-aarch64` | no | no | no | UAF; leak shape differs |
 | PHP 8.2.0 aarch64 | `php:8.2.0-apache` | — (offsets only) | n/a | n/a | no | no heap profile |
 
-**13 heap profiles, 5 with verified RCE. Offsets extracted for 12 builds.**
+**14 heap profiles, 6 with verified RCE. Offsets extracted for 12 builds.**
 
 `Heap leak` is stage 1, `libphp leak` is stage 2 and `RCE` is a real command
 proof on an isolated lab. `no` means not verified, not necessarily impossible;
@@ -55,7 +56,12 @@ offsets-only entry. All `yes` rows use the lab configuration: Apache prefork
 `mod_php`, one worker, `display_errors=On`, `memory_limit=8M` and
 `session.upload_progress=On`. Per-image offsets and `libphp` sha256 are in
 [the offset inventory](docs/offset-inventory.md). The 8.4.25 profile needs the
-default retries because its stage 3 is probabilistic.
+default retries because its stage 3 is probabilistic. The 8.4.26 deb13/apxs2
+row is a **source build**, not an official image: its stage-3 phase is
+instance-dependent (the contributor reported 4/4 runs on one Apache master and
+0/5+ on others), so treat `rce: true` as “reproduced on the reporter's lab” and
+retry on a fresh worker/master. Because two 8.4.26 amd64 profiles exist, the
+dispatcher requires `--profile deb13-apxs2` for this build.
 
 ## Features
 

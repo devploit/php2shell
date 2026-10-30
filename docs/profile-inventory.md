@@ -12,6 +12,7 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 | 8.3.35 | php-8.3.35-bookworm-aarch64 | 0x377428 | 0x46fcc0 | - | 841 | 63 | 406 | no |
 | 8.4.25 | php-8.4.25-bookworm-aarch64 | 0x42fa30 | 0x637ae0 | 0x690d8 | 841 | 63 | 406 | yes |
 | 8.4.26 | php-8.4.26-bookworm-amd64 | 0x465370 | 0x65eb60 | 0x690d8 | 841 | 79 | 406 | yes |
+| 8.4.26 | php-8.4.26-deb13-apxs2-amd64 | 0x3b19a0 | 0x584f00 | 0x6e0d8 | 892 | 79 | 442 | yes |
 | 8.5.10 | php-8.5.10-bookworm-aarch64 | 0x52e130 | 0x75d360 | 0x690d8 | 841 | 63 | 406 | yes |
 | 8.5.11 | php-8.5.11-bookworm-amd64 | 0x5996e0 | 0x7b47a0 | 0x690d8 | 841 | 63 | 406 | yes |
 | 8.5.11 | php-8.5.11-bookworm-aarch64 | 0x5314f0 | 0x761b80 | 0x690d8 | 841 | 63 | 406 | yes |
@@ -32,6 +33,16 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 ```
 
 This is the 8.5 branch, fixed in 8.5.12.
+
+### PHP 8.4.26 deb13/apxs2 — RCE reported on a source build
+
+`php-8.4.26-deb13-apxs2-amd64` is a Debian 13 source build (Apache 2.4.69,
+apxs2, prefork, one worker), not an official image. It needs a third stage-3
+layout: five `(4,4)` pads shift the bin-56 reclaim slot so a 31-byte fake
+reference lands whole at R0. Stages 1-2 dispatch cleanly on every attempt;
+stage 3 is instance-dependent, so retry on a fresh master. The profile must be
+selected explicitly (`--profile deb13-apxs2`) because the official 8.4.26
+bookworm profile has the same PHP version and architecture.
 
 ### PHP 8.4.26 — RCE verified
 
