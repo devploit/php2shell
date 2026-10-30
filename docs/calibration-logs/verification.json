@@ -1,0 +1,38 @@
+{
+  "7.2.34": {
+    "result": "SESSION PLANT",
+    "verified_at": "2026-10-24"
+  },
+  "7.4.33": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-27"
+  },
+  "8.0.30": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-27"
+  },
+  "8.1.33": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-27"
+  },
+  "8.2.34": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-24"
+  },
+  "8.3.35": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-24"
+  },
+  "8.4.0": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-24"
+  },
+  "8.4.25": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-24"
+  },
+  "8.4.26": {
+    "result": "REMOTE RCE",
+    "verified_at": "2026-10-24"
+  }
+}

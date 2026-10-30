@@ -41,9 +41,10 @@
     "sapi": {
       "type": "string",
       "enum": [
-        "apache2handler"
+        "apache2handler",
+        "fpm"
       ],
-      "description": "Server API. Only apache2handler (mod_php prefork) is supported."
+      "description": "Server API: apache2handler (mod_php prefork) or fpm (nginx + PHP-FPM)."
     },
     "verified": {
       "type": "boolean",
@@ -76,7 +77,7 @@
     },
     "libphp": {
       "type": "object",
-      "description": "Symbol offsets relative to the libphp.so load base.",
+      "description": "Symbol offsets relative to the libphp.so load base (apache2handler) or the php-fpm PIE base (fpm).",
       "required": [
         "zif_system",
         "zval_ptr_dtor"
@@ -103,6 +104,199 @@
       },
       "additionalProperties": false
     },
+    "fpm": {
+      "type": "object",
+      "description": "PHP-FPM stale-BG(unserialize) chain layout (lab-calibrated; offsets relative to the php-fpm PIE base).",
+      "properties": {
+        "basic_globals": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Offset of basic_globals in the php-fpm binary."
+        },
+        "bg_unserialize_data_off": {
+          "type": "integer",
+          "description": "offsetof(php_basic_globals, unserialize.data)."
+        },
+        "bg_unserialize_level_off": {
+          "type": "integer",
+          "description": "offsetof(php_basic_globals, unserialize.level)."
+        },
+        "struct_size": {
+          "type": "integer",
+          "description": "sizeof(struct php_unserialize_data) for this build."
+        },
+        "reclaim_pads": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Pad field sizes placed before the big reclaim field."
+        },
+        "reclaim_size": {
+          "type": "integer",
+          "description": "Size of the big multipart field that reclaims the stale struct."
+        },
+        "oracle": {
+          "type": "string",
+          "description": "Calibration oracle used by the lab client (e.g. /proc/<pid>/mem)."
+        },
+        "no_oracle": {
+          "type": "object",
+          "description": "HTTP-only endgame geometry: no /proc/<pid>/mem is read at exploit time.",
+          "properties": {
+            "reclaim_pads": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Pad field sizes placed before the big reclaim field."
+            },
+            "reclaim_size": {
+              "type": "integer",
+              "description": "Size of the big multipart field that reclaims the stale struct."
+            },
+            "candidates": {
+              "type": "array",
+              "description": "Candidate (d offset, cover offset) pairs tried in order.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "d_off": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  },
+                  "k": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  }
+                },
+                "required": [
+                  "d_off",
+                  "k"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "bases": {
+              "type": "string",
+              "description": "How the absolute bases are supplied or derived."
+            }
+          },
+          "additionalProperties": false
+        },
+        "leak": {
+          "type": "object",
+          "description": "HTTP-only base leak geometry (stale short-session string OOB read).",
+          "properties": {
+            "arm_path": {
+              "type": "string",
+              "description": "Builder script that stores the large stale session values (for example /bigvar.php)."
+            },
+            "pads": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Field sizes placed before the reclaimed forged header."
+            },
+            "size": {
+              "type": "integer",
+              "description": "Reclaim buffer size in bytes."
+            },
+            "header_content_off": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Offset of the forged zend_string header inside the reclaim content."
+            },
+            "read_len": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Forged string length that spans the stale chunk and PIE pointers."
+            },
+            "chunk_ptr_off": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Offset of the stale zval chunk pointer in the leaked bytes."
+            },
+            "chunk_base_off": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Offset from the chunk pointer to the Zend-MM chunk base."
+            },
+            "pie_ptr_off": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Offset of the leaked execute_ex handler pointer in the leaked bytes."
+            },
+            "pie_base_off": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]+$",
+              "description": "Offset from the leaked execute_ex handler pointer to the PIE base."
+            },
+            "bases": {
+              "type": "string",
+              "description": "How the bases are obtained."
+            }
+          },
+          "required": [
+            "arm_path",
+            "pads",
+            "size",
+            "header_content_off",
+            "read_len",
+            "chunk_ptr_off",
+            "chunk_base_off",
+            "pie_ptr_off",
+            "pie_base_off"
+          ],
+          "additionalProperties": false
+        },
+        "growth": {
+          "type": "object",
+          "description": "geometry of the single-surface amplifier arm (default-installation mode); absent means the classic two-surface arm geometry applies",
+          "properties": {
+            "leak": {
+              "$ref": "#/properties/fpm/properties/leak"
+            },
+            "candidates": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "d_off",
+                  "k"
+                ],
+                "properties": {
+                  "d_off": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  },
+                  "k": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "reclaim_pads": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "reclaim_size": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "stages": {
       "type": "object",
       "description": "Heap calibration parameters for each exploit stage.",
@@ -113,7 +307,7 @@
             "null"
           ],
           "minimum": 1,
-          "description": "Number of multipart fields to place before the forged block in stage 1."
+          "description": "Number of multipart fields to place before the forged block in stage 1. Null when not calibrated."
         },
         "stage1_forge_len": {
           "type": [
@@ -121,7 +315,7 @@
             "null"
           ],
           "minimum": 1,
-          "description": "Byte length of the forged zend_string block in stage 1."
+          "description": "Byte length of the forged zend_string block in stage 1. Null when not calibrated."
         },
         "stage2_t": {
           "type": [
@@ -129,7 +323,7 @@
             "null"
           ],
           "minimum": 1,
-          "description": "Target field index for the stage-2 libphp pointer leak."
+          "description": "Target field index for the stage-2 libphp pointer leak. Null when not calibrated."
         },
         "stage2_v": {
           "type": [
@@ -137,7 +331,7 @@
             "null"
           ],
           "minimum": 1,
-          "description": "Value parameter for stage-2 calibration."
+          "description": "Value parameter for stage-2 calibration. Null when not calibrated."
         },
         "stage3_pads": {
           "type": [
@@ -160,6 +354,30 @@
             "null"
           ],
           "description": "Whether the 167-byte carrier string is used. Null when stage 3 is not calibrated."
+        },
+        "stage3_cookie": {
+          "type": "boolean",
+          "description": "Send Cookie: PHPSESSID=<32 bytes> on the stage-3 first request (keeps PS(id) valid and participates in the heap phase on some builds)."
+        },
+        "stage3_wfields": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Small fill fields (5-char name, 1-byte value) prepended to the stage-3 first request."
+        },
+        "stage3_fake_len": {
+          "type": "integer",
+          "minimum": 24,
+          "description": "Byte length of the fake-reference zend_string value (31 = chars land at R0 on the deb13-apxs2 build; upstream default 55 = chars at R0+8)."
+        },
+        "stage3_fakes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of fake-reference fields in the stage-3 reclaim run."
+        },
+        "stage3_b_name_len": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Name length of the stage-3 second-request fields (3-char names shift the reclaim phase versus 31-char names)."
         },
         "stage3_mode": {
           "type": [
@@ -235,7 +453,7 @@
             "null"
           ],
           "pattern": "^0x[0-9a-fA-F]+$",
-          "description": "Zend MM chunk base address from stage-1 leak."
+          "description": "Zend MM chunk base address from stage-1 leak. Null when not leaked."
         },
         "libphp_base": {
           "type": [
@@ -243,7 +461,37 @@
             "null"
           ],
           "pattern": "^0x[0-9a-fA-F]+$",
-          "description": "libphp.so load base from stage-2 leak."
+          "description": "libphp.so load base from stage-2 leak. Null when not leaked."
+        },
+        "chunk_base_example": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Example chunk base observed on a similar build (informational)."
+        },
+        "libphp_base_example": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^0x[0-9a-fA-F]+$",
+          "description": "Example libphp base observed on a similar build (informational)."
+        },
+        "stage3_http_session_vars": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Chunk-relative shape of $_SESSION storage observed during calibration."
+        },
+        "stage3_ref_buffers": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Chunk-relative shape of the reference buffers observed during calibration."
         }
       },
       "additionalProperties": false
@@ -269,52 +517,111 @@
         "minimum": 1
       },
       "description": "memory_limit values (in MiB) where RCE was verified."
+    },
+    "layout": {
+      "type": "object",
+      "description": "Compiled struct-layout offsets for this PHP-FPM build. The strict per-field shape is validated by profiles/fpm-schema.json; this generic schema only asserts it is an object."
     }
   },
-  "if": {
-    "properties": {
-      "rce": {
-        "const": true
-      }
-    }
-  },
-  "then": {
-    "required": [
-      "oom_mb"
-    ],
-    "properties": {
-      "libphp": {
-        "required": [
-          "zif_system",
-          "zval_ptr_dtor",
-          "htdata"
-        ],
+  "allOf": [
+    {
+      "if": {
         "properties": {
-          "htdata": {
-            "type": "string"
-          }
-        }
-      },
-      "stages": {
-        "required": [
-          "stage1_n",
-          "stage1_forge_len",
-          "stage2_t",
-          "stage2_v",
-          "stage3_mode",
-          "stage3_pads",
-          "stage3_carrier"
-        ],
-        "properties": {
-          "stage3_pads": {
-            "type": "array"
+          "rce": {
+            "const": true
           },
-          "stage3_carrier": {
-            "type": "boolean"
+          "sapi": {
+            "const": "apache2handler"
+          }
+        },
+        "required": [
+          "rce",
+          "sapi"
+        ]
+      },
+      "then": {
+        "required": [
+          "oom_mb"
+        ],
+        "properties": {
+          "libphp": {
+            "required": [
+              "zif_system",
+              "zval_ptr_dtor",
+              "htdata"
+            ],
+            "properties": {
+              "htdata": {
+                "type": "string"
+              }
+            }
+          },
+          "stages": {
+            "required": [
+              "stage1_n",
+              "stage1_forge_len",
+              "stage2_t",
+              "stage2_v",
+              "stage3_mode",
+              "stage3_pads",
+              "stage3_carrier"
+            ],
+            "properties": {
+              "stage3_pads": {
+                "type": "array"
+              },
+              "stage3_carrier": {
+                "type": "boolean"
+              },
+              "stage3_mode": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "carrier",
+                  "lab",
+                  "vessel",
+                  null
+                ],
+                "description": "Stage-3 variant: 'carrier' (upstream 15-byte bin-40 string), 'lab' (55-byte reference carriers) or 'vessel' (reference pattern embedded in a fake-HashTable blob; see tools/php2shell_vessel.py). Null when stage 3 is not calibrated."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "rce": {
+            "const": true
+          },
+          "sapi": {
+            "const": "fpm"
+          }
+        },
+        "required": [
+          "rce",
+          "sapi"
+        ]
+      },
+      "then": {
+        "required": [
+          "oom_mb",
+          "fpm"
+        ],
+        "properties": {
+          "fpm": {
+            "required": [
+              "basic_globals",
+              "struct_size",
+              "reclaim_size"
+            ]
           }
         }
       }
     }
-  },
+  ],
   "additionalProperties": false
 }

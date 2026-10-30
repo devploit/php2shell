@@ -1,0 +1,60 @@
+; php2shell FPM laboratory — rendered per build by tools/php2shell_fpm_labs.py.
+; Two pools share one binary:
+;   chain   — the exploit target (8M, cleanup On),  one static worker
+;   builder — builds large session files pure-HTTP (64M, cleanup Off)
+[global]
+pid = @RUNTIME@/logs/fpm.pid
+error_log = @RUNTIME@/logs/fpm.log
+log_level = notice
+daemonize = yes
+emergency_restart_threshold = 1000
+
+[chain]
+listen = 127.0.0.1:@CHAIN_PORT@
+listen.allowed_clients = 127.0.0.1
+user = @USER@
+group = @GROUP@
+pm = static
+pm.max_children = 1
+pm.max_requests = 0
+request_terminate_timeout = 0
+catch_workers_output = no
+decorate_workers_output = no
+chdir = @WEBROOT@
+php_admin_value[memory_limit] = 8M
+php_admin_value[post_max_size] = 128M
+php_admin_value[upload_max_filesize] = 128M
+php_admin_value[max_input_vars] = 1000
+php_admin_value[session.save_path] = @SAVEDIR@
+php_admin_value[session.upload_progress.cleanup] = On
+php_admin_value[session.upload_progress.enabled] = On
+php_admin_value[session.use_cookies] = 1
+php_admin_value[session.use_strict_mode] = 0
+php_admin_flag[display_errors] = On
+php_admin_flag[display_startup_errors] = On
+php_admin_value[error_reporting] = E_ALL
+php_admin_value[expose_php] = On
+php_admin_value[error_log] = @RUNTIME@/logs/php-chain.log
+
+[builder]
+listen = 127.0.0.1:@BUILDER_PORT@
+listen.allowed_clients = 127.0.0.1
+user = @USER@
+group = @GROUP@
+pm = static
+pm.max_children = 1
+pm.max_requests = 0
+catch_workers_output = no
+decorate_workers_output = no
+chdir = @WEBROOT@
+php_admin_value[memory_limit] = 64M
+php_admin_value[post_max_size] = 128M
+php_admin_value[upload_max_filesize] = 128M
+php_admin_value[session.save_path] = @SAVEDIR@
+php_admin_value[session.upload_progress.cleanup] = Off
+php_admin_value[session.upload_progress.enabled] = On
+php_admin_flag[display_errors] = On
+php_admin_flag[display_startup_errors] = On
+php_admin_value[error_reporting] = E_ALL
+php_admin_value[expose_php] = On
+php_admin_value[error_log] = @RUNTIME@/logs/php-builder.log

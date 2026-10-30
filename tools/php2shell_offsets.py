@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 php2shell_offsets.py — extract libphp symbol offsets from PHP Docker images.
 
@@ -92,7 +91,8 @@ def docker(*args, timeout=900, text=True):
 
 
 def parse_elf(path: str):
-    data = open(path, "rb").read()
+    with open(path, "rb") as handle:
+        data = handle.read()
     if data[:4] != b"\x7fELF" or data[4] != 2 or data[5] != 1:
         raise ValueError("not a little-endian ELF64 file")
     e_phoff, = struct.unpack_from("<Q", data, 0x20)
@@ -192,7 +192,8 @@ def extract(image: str) -> dict:
         if not lib:
             return {"image": image, "status": "libphp not found"}
         bias, symbols = parse_elf(lib)
-        sha = hashlib.sha256(open(lib, "rb").read()).hexdigest()
+        with open(lib, "rb") as handle:
+            sha = hashlib.sha256(handle.read()).hexdigest()
         env = image_env(image)
         version = env.get("PHP_VERSION", "")
         if not version:
@@ -231,7 +232,7 @@ def heap_status(version: str, arch: str) -> str | None:
     best = None
     for path in glob.glob(os.path.join(ROOT, "profiles", f"*-{arch}.json")):
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 p = json.load(fh)
         except (OSError, ValueError):
             continue
@@ -254,7 +255,7 @@ def write_doc(results) -> None:
     entries = {}
     for path in glob.glob(os.path.join(OUT, "*.json")):
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 item = json.load(fh)
         except (OSError, ValueError):
             continue

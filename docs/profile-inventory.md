@@ -36,6 +36,7 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 | 8.4.25 | php-8.4.25-bookworm-aarch64 | 0x42fa30 | 0x637ae0 | 0x690d8 | 841 | 63 | 406 | carrier | yes |
 | 8.4.25 | php-8.4.25-bookworm-amd64 | 0x464c70 | 0x65dc60 | 0x690d8 | 841 | 63 | 406 | carrier | yes |
 | 8.4.26 | php-8.4.26-bookworm-amd64 | 0x465370 | 0x65eb60 | 0x690d8 | 841 | 79 | 406 | carrier | yes |
+| 8.4.26 | php-8.4.26-deb13-apxs2-amd64 | 0x3b19a0 | 0x584f00 | 0x6e0d8 | 892 | 79 | 442 | lab | yes |
 | 8.5.0 | php-8.5.0-bookworm-amd64 | 0x56a420 | 0x781fe0 | 0x690d8 | 841 | 63 | 406 | vessel | yes |
 | 8.5.0 | php-8.5.0-bookworm | 0x503510 | 0x731d80 | - | 841 | 63 | 406 | - | no |
 | 8.5.1 | php-8.5.1-bookworm-amd64 | 0x56a9a0 | 0x7826a0 | 0x690d8 | 841 | 63 | 406 | vessel | yes |
@@ -52,7 +53,16 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 | 8.5.11 | php-8.5.11-bookworm-aarch64 | 0x5314f0 | 0x761b80 | 0x690d8 | 841 | 63 | 406 | carrier | yes |
 | 8.5.11 | php-8.5.11-bookworm-amd64 | 0x5996e0 | 0x7b47a0 | 0x690d8 | 841 | 63 | 406 | carrier | yes |
 
-47 profiles, 21 with verified RCE.
+| 7.4.33 | php-7.4.33-fpm | 0x34c0a0 | 0x403be0 | - | - | - | - | - | yes |
+| 8.0.30 | php-8.0.30-fpm | 0x359b20 | 0x4145e0 | - | - | - | - | - | yes |
+| 8.1.33 | php-8.1.33-fpm | 0x367ca0 | 0x427120 | - | - | - | - | - | yes |
+| 8.2.34 | php-8.2.34-fpm | 0x3769d0 | 0x439120 | - | - | - | - | - | yes |
+| 8.3.35 | php-8.3.35-fpm | 0x37d5f0 | 0x446460 | - | - | - | - | - | yes |
+| 8.4.0 | php-8.4.0-fpm | 0x384380 | 0x542dd0 | - | - | - | - | - | yes |
+| 8.4.25 | php-8.4.25-fpm | 0x386460 | 0x549890 | - | - | - | - | - | yes |
+| 8.4.26 | php-8.4.26-fpm | 0x386660 | 0x54a0d0 | - | - | - | - | - | yes |
+
+**56 profiles, 30 with verified RCE** (48 Apache/mod_php + 8 PHP-FPM).
 
 
 
@@ -150,6 +160,22 @@ Profiles store the vessel geometry in `stages`: `stage3_mode: "vessel"`,
 `stage3_early`, `stage3_blobs`, `stage3_vessel_index` plus the usual pads.
 The dispatcher and calibrator route to the vessel chain automatically
 (`--stage3-mode vessel` on `php2shell_calibrate.py`).
+
+### PHP-FPM profiles
+
+The eight `*-fpm` profiles are **contributor-reported, not independently
+confirmed** by the maintainer and are specific to their compilation
+environment (the compile-time prefix shifts the heap). Re-run `calibrate` on
+the host that will run the exploit; `no-oracle` leaks the chunk/PIE bases over
+HTTP and does not need `/proc/<pid>/mem`.
+
+### PHP 8.4.26 deb13/apxs2
+
+The Debian 13/apxs2 profile is a **contributor-reported, not independently
+confirmed** source build, not an official image. It needs a third stage-3
+layout; the stage-1/2 offsets and the instance-dependent stage-3 behaviour are
+documented in its profile and in
+`docs/calibration-logs/8.4.26-deb13-apxs2.md`.
 
 ## Symbol offsets for more builds
 

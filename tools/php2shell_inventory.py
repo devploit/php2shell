@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Inventory the generated PHP2Shell profiles.
 
 Reads every JSON profile in profiles/ and prints the offsets and heap
@@ -27,7 +26,7 @@ def load_profiles(directory: str):
     rows = []
     for path in sorted(glob.glob(os.path.join(directory, "*.json"))):
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 data = json.load(fh)
         except (OSError, ValueError):
             continue

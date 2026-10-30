@@ -1,0 +1,26 @@
+# php2shell FPM laboratory — one nginx fronts every build under test.
+# SERVERS placeholder is expanded by tools/php2shell_fpm_labs.py (one server
+# block per version: chain port + builder port).
+worker_processes 1;
+error_log @RUNTIME@/logs/nginx-error.log warn;
+pid @RUNTIME@/logs/nginx.pid;
+daemon on;
+master_process on;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include @NGINX_CONF@/mime.types;
+    default_type application/octet-stream;
+    access_log @RUNTIME@/logs/nginx-access.log;
+    sendfile on;
+    keepalive_timeout 65;
+    client_max_body_size 128m;
+    client_body_buffer_size 256k;
+    client_body_temp_path @RUNTIME@/logs/client_temp;
+    fastcgi_temp_path @RUNTIME@/logs/fastcgi_temp;
+
+@SERVERS@
+}

@@ -1,0 +1,40 @@
+; php2shell FPM laboratory — "default installation" pool.
+; One pool, dynamic pm with five workers, and the php.ini production
+; defaults (memory_limit=128M, post_max_size=8M, cleanup=On).  The growth
+; arm of tools/php2shell_fpm.py works against exactly this shape: no
+; second pool, no memory_limit split, no single-worker pinning.
+[global]
+pid = @RUNTIME@/logs/fpm.pid
+error_log = @RUNTIME@/logs/fpm.log
+log_level = notice
+daemonize = yes
+emergency_restart_threshold = 1000
+
+[chain]
+listen = 127.0.0.1:@CHAIN_PORT@
+listen.allowed_clients = 127.0.0.1
+user = @USER@
+group = @GROUP@
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+pm.max_requests = 0
+request_terminate_timeout = 0
+catch_workers_output = no
+decorate_workers_output = no
+chdir = @WEBROOT@
+php_admin_value[memory_limit] = 128M
+php_admin_value[post_max_size] = 8M
+php_admin_value[upload_max_filesize] = 2M
+php_admin_value[max_input_vars] = 1000
+php_admin_value[session.save_path] = @SAVEDIR@
+php_admin_value[session.upload_progress.cleanup] = On
+php_admin_value[session.upload_progress.enabled] = On
+php_admin_value[session.use_cookies] = 1
+php_admin_value[session.use_strict_mode] = 0
+php_admin_flag[display_errors] = Off
+php_admin_flag[display_startup_errors] = Off
+php_admin_value[log_errors] = On
+php_admin_value[error_log] = @RUNTIME@/logs/php-chain.log
