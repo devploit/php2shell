@@ -50,5 +50,5 @@
     "chunk_base": "0x7fa454800000",
     "libphp_base": "0x7fa456400000"
   },
-  "status": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+  "status": "contributor-reported — RCE verified (vessel stage 3; uid=33 www-data proof)"
 }
