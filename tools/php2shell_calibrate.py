@@ -450,7 +450,8 @@ def main() -> int:
         "verified": rce,
         "rce": rce,
         "oom_mb": 12,
-        "upstream_profile": "bookworm" if s3_carrier else "lab",
+        "upstream_profile": ("bookworm" if s3_carrier in (None, True)
+                             else "lab"),
         "libphp": {
             "zif_system": hex(sym["zif_system"]),
             "zval_ptr_dtor": hex(sym["zval_ptr_dtor"]),
