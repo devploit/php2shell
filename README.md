@@ -73,9 +73,11 @@ Independent re-verification on 2026-10-30 reproduced the command proof
 (`uid=33(www-data)`) for every RCE profile added by this branch: 8.4.10,
 8.4.11, 8.4.19, 8.4.20, 8.4.25 amd64 and all of 8.5.0–8.5.10 amd64 plus
 8.5.11 aarch64. The details are in
-[the verification log](docs/calibration-logs/verified-2026-10-30.md). The
-four profiles that already existed on `main` were verified before this branch
-and were not re-run during this review.
+[the verification log](docs/calibration-logs/verified-2026-10-30.md). Their
+`status` says `contributor-reported, maintainer-confirmed`: the contributor
+supplied the calibration and the maintainer reproduced it. The four profiles
+that already existed on `main` were verified before this branch and were not
+re-run during this review.
 
 `Heap leak` is stage 1, `libphp leak` is stage 2 and `RCE` is a real command
 proof on an isolated lab. `no` means not verified, not necessarily impossible;

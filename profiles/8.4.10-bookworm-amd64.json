@@ -59,5 +59,5 @@
     "chunk_base": "0x7f0493400000",
     "libphp_base": "0x7f04916f2000"
   },
-  "status": "RCE verified"
+  "status": "contributor-reported, maintainer-confirmed — RCE verified"
 }
