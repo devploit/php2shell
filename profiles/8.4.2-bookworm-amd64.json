@@ -16,8 +16,8 @@
     "htdata": null
   },
   "stages": {
-    "stage1_n": 0,
-    "stage1_forge_len": 0,
+    "stage1_n": null,
+    "stage1_forge_len": null,
     "stage2_t": null,
     "stage2_v": 16,
     "stage3_pads": null,

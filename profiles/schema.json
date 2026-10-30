@@ -108,22 +108,34 @@
       "description": "Heap calibration parameters for each exploit stage.",
       "properties": {
         "stage1_n": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1,
           "description": "Number of multipart fields to place before the forged block in stage 1."
         },
         "stage1_forge_len": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1,
           "description": "Byte length of the forged zend_string block in stage 1."
         },
         "stage2_t": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1,
           "description": "Target field index for the stage-2 libphp pointer leak."
         },
         "stage2_v": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1,
           "description": "Value parameter for stage-2 calibration."
         },
@@ -218,12 +230,18 @@
       "description": "Addresses observed during calibration (informational, not used at runtime).",
       "properties": {
         "chunk_base": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^0x[0-9a-fA-F]+$",
           "description": "Zend MM chunk base address from stage-1 leak."
         },
         "libphp_base": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^0x[0-9a-fA-F]+$",
           "description": "libphp.so load base from stage-2 leak."
         }

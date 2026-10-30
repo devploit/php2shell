@@ -13,8 +13,8 @@
     "htdata": null
   },
   "stages": {
-    "stage1_n": 0,
-    "stage1_forge_len": 0,
+    "stage1_n": null,
+    "stage1_forge_len": null,
     "stage2_t": 406,
     "stage2_v": 16,
     "stage3_pads": null,
@@ -30,8 +30,7 @@
     "chunk_base": null,
     "libphp_base": null
   },
-  "status": "calibration failed: stage 1 heap leak not reproduced on 8.2.34",
-  "note": "libphp offsets extracted; the 8.4/8.5 upload-progress leak shape did not reproduce on this branch",
+  "status": "calibration failed: stage 1 heap leak not reproduced on 8.2.34 (libphp offsets extracted; the 8.4/8.5 upload-progress leak shape did not reproduce on this branch)",
   "distro": "debian",
   "arch": "aarch64"
 }

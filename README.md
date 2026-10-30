@@ -69,6 +69,13 @@ not match the profile.
 **47 heap profiles, 21 with verified RCE. Offsets extracted for 48 image/arch
 rows covering 39 distinct PHP builds.**
 
+Independent re-verification on 2026-10-30 reproduced the command proof
+(`uid=33(www-data)`) for 8.4.10, 8.4.11, 8.4.19, 8.4.20, 8.4.25, 8.5.5,
+8.5.9 and 8.5.11; the details are in
+[the verification log](docs/calibration-logs/verified-2026-10-30.md). The
+remaining RCE profiles are contributor-reported until they are re-run (Docker
+Hub's pull limit blocked the additional images during that review).
+
 `Heap leak` is stage 1, `libphp leak` is stage 2 and `RCE` is a real command
 proof on an isolated lab. `no` means not verified, not necessarily impossible;
 `pending` means the sweep predates the cookie `'+'` decoding fix and the leak

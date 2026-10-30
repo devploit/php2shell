@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """php2shell_vessel.py — stage-3 "vessel" variant for early-8.5 layouts.
 
 Why a second stage 3
@@ -39,9 +38,6 @@ labs, under gdb and without it. Authorized local labs only.
 """
 
 from __future__ import annotations
-from php2shell_paths import default_repo_dir
-from php2shell_rce import is_loopback
-from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
 
 import argparse
 import os
@@ -50,6 +46,10 @@ import struct
 import sys
 import time
 import urllib.parse
+
+from php2shell_paths import default_repo_dir
+from php2shell_rce import is_loopback
+from php2shell_upstream import patch_cookie_decode, patch_params, patch_tls
 
 DEFAULT_DIR = default_repo_dir()
 

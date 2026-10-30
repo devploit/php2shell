@@ -581,6 +581,7 @@ def run_vessel(args, profile, proof, huge_mb, ui: UI, stream: bool = True,
     stages = profile.get("stages") or {}
     cmd = [sys.executable, os.path.join(HERE, "php2shell_vessel.py"),
            "-u", args.target, "-c", args.command,
+           "--repo-dir", args.repo_dir,
            "--proof-file", proof,
            "--zif-offset", str(lib["zif_system"]),
            "--dtor-offset", str(lib["zval_ptr_dtor"]),

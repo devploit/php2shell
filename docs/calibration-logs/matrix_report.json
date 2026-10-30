@@ -4,5 +4,53 @@
     "status": "leaks-only",
     "rce": false,
     "profile": "profiles/8.4.8-bookworm-amd64.json"
+  },
+  {
+    "label": "8.4.10-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.4.10-bookworm-amd64.json"
+  },
+  {
+    "label": "8.4.11-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.4.11-bookworm-amd64.json"
+  },
+  {
+    "label": "8.4.19-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.4.19-bookworm-amd64.json"
+  },
+  {
+    "label": "8.4.20-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.4.20-bookworm-amd64.json"
+  },
+  {
+    "label": "8.4.25-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.4.25-bookworm-amd64.json"
+  },
+  {
+    "label": "8.5.5-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.5.5-bookworm-amd64.json"
+  },
+  {
+    "label": "8.5.9-bookworm-amd64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.5.9-bookworm-amd64.json"
+  },
+  {
+    "label": "8.5.11-bookworm-aarch64",
+    "status": "rce",
+    "rce": true,
+    "profile": "profiles/8.5.11-bookworm-aarch64.json"
   }
 ]

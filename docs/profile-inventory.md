@@ -71,9 +71,10 @@ Generated from `profiles/*.json` by `tools/php2shell_inventory.py`.
 - **8.5.0 – 8.5.9** — `php:8.5.{0..9}-apache`. **Vessel stage 3** (see
   below): the upstream carrier layout is unreachable on the early-8.5 heap,
   so S steers the dangling reference one page up onto B2's blob page and
-  blob 1 embeds the reference pattern itself. `uid=33(www-data)` proofs on
-  all ten — the geometry calibrated on 8.5.0/8.5.5 (under gdb and without
-  it) carried over to 8.5.1–8.5.9 unchanged. Fixed in 8.5.12.
+  blob 1 embeds the reference pattern itself. The geometry calibrated on
+  8.5.0/8.5.5 (under gdb and without it) was carried over to 8.5.1–8.5.9;
+  the maintainer independently re-verified 8.5.5 and 8.5.9 on 2026-10-30,
+  and the remaining early-8.5 rows are contributor-reported. Fixed in 8.5.12.
 
 ### Leaks reproduced, stage 3 misses
 

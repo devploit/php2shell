@@ -1,6 +1,6 @@
 {
   "source": "ANALISIS_PHP2SHELL.md, section 2 (fixed releases) and section 1 (CVEs)",
-  "updated": "2026-10-23",
+  "updated": "2026-10-30",
   "branches": [
     {
       "branch": "5.4",
@@ -286,6 +286,146 @@
       "rce": false,
       "verified": false,
       "note": "stage-1 and stage-2 leaks reproduce; stage-3 layout not found"
+    },
+    "8.4.11/amd64": {
+      "file": "profiles/8.4.11-bookworm-amd64.json",
+      "build": "php:8.4.11-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified"
+    },
+    "8.4.12/amd64": {
+      "file": "profiles/8.4.12-bookworm-amd64.json",
+      "build": "php:8.4.12-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.13/amd64": {
+      "file": "profiles/8.4.13-bookworm-amd64.json",
+      "build": "php:8.4.13-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "leaks calibrated; stage 3 not verified"
+    },
+    "8.4.14/amd64": {
+      "file": "profiles/8.4.14-bookworm-amd64.json",
+      "build": "php:8.4.14-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.15/amd64": {
+      "file": "profiles/8.4.15-bookworm-amd64.json",
+      "build": "php:8.4.15-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.16/amd64": {
+      "file": "profiles/8.4.16-bookworm-amd64.json",
+      "build": "php:8.4.16-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.17/amd64": {
+      "file": "profiles/8.4.17-bookworm-amd64.json",
+      "build": "php:8.4.17-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.18/amd64": {
+      "file": "profiles/8.4.18-bookworm-amd64.json",
+      "build": "php:8.4.18-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.19/amd64": {
+      "file": "profiles/8.4.19-bookworm-amd64.json",
+      "build": "php:8.4.19-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified"
+    },
+    "8.4.6/amd64": {
+      "file": "profiles/8.4.6-bookworm-amd64.json",
+      "build": "php:8.4.6-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.7/amd64": {
+      "file": "profiles/8.4.7-bookworm-amd64.json",
+      "build": "php:8.4.7-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "calibration failed: heap/libphp leak not reproduced"
+    },
+    "8.4.8/amd64": {
+      "file": "profiles/8.4.8-bookworm-amd64.json",
+      "build": "php:8.4.8-apache (Debian bookworm, mod_php, prefork)",
+      "rce": false,
+      "verified": false,
+      "note": "leaks calibrated; stage 3 not verified"
+    },
+    "8.5.1/amd64": {
+      "file": "profiles/8.5.1-bookworm-amd64.json",
+      "build": "php:8.5.1-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.2/amd64": {
+      "file": "profiles/8.5.2-bookworm-amd64.json",
+      "build": "php:8.5.2-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.3/amd64": {
+      "file": "profiles/8.5.3-bookworm-amd64.json",
+      "build": "php:8.5.3-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.4/amd64": {
+      "file": "profiles/8.5.4-bookworm-amd64.json",
+      "build": "php:8.5.4-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.6/amd64": {
+      "file": "profiles/8.5.6-bookworm-amd64.json",
+      "build": "php:8.5.6-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.7/amd64": {
+      "file": "profiles/8.5.7-bookworm-amd64.json",
+      "build": "php:8.5.7-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.8/amd64": {
+      "file": "profiles/8.5.8-bookworm-amd64.json",
+      "build": "php:8.5.8-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
+    },
+    "8.5.9/amd64": {
+      "file": "profiles/8.5.9-bookworm-amd64.json",
+      "build": "php:8.5.9-apache (Debian bookworm, mod_php, prefork)",
+      "rce": true,
+      "verified": true,
+      "note": "RCE verified (vessel stage 3; uid=33 www-data proof)"
     }
   },
   "coverage_note": "A version listed in a vulnerable branch is exposed, but it is exploitable only when a verified profile exists for that exact build. Offsets alone (docs/offset-inventory.md) do not make a build exploitable. Vendor backports cannot be inferred from the version string."

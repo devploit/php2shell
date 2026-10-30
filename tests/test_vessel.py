@@ -199,6 +199,26 @@ class FireTests(unittest.TestCase):
                          {"name": "e0000000", "data": b"E" * 160})
 
 
+class CalibratorOptionsTests(unittest.TestCase):
+    def test_pad_option_is_used(self):
+        import php2shell_calibrate as cal
+
+        params = cal.vessel_params({"pad": [(5, 9)], "stage3_early": 128,
+                                    "stage3_blobs": 7,
+                                    "stage3_vessel_index": 2})
+        self.assertEqual(params["pads"], [(5, 9)])
+        self.assertEqual(params["early"], 128)
+        self.assertEqual(params["blobs"], 7)
+        self.assertEqual(params["vessel_index"], 2)
+
+    def test_defaults_when_only_legacy_key_is_present(self):
+        import php2shell_calibrate as cal
+
+        params = cal.vessel_params({"stage3_vessel_pads": [(6, 6)]})
+        self.assertEqual(params["pads"], [(6, 6)])
+        self.assertEqual(params["early"], ves.DEFAULTS["early"])
+
+
 class RunVesselTests(unittest.TestCase):
     def test_dry_run_command(self):
         profile = {
@@ -215,7 +235,8 @@ class RunVesselTests(unittest.TestCase):
         args = SimpleNamespace(
             target="http://127.0.0.1:8160/index.php", command="id>/out/p1",
             fetch="", retries=3, no_pre_rotate=False, no_retry_rotate=False,
-            allow_remote=False, insecure=False, dry_run=True)
+            allow_remote=False, insecure=False, dry_run=True,
+            repo_dir="/tmp/custom-upstream")
         ui = SimpleNamespace(commands=[], command=lambda cmd:
                              ui.commands.append(cmd))
         rc = auto.run_vessel(args, profile, "/tmp/p1", 12, ui)
@@ -232,6 +253,7 @@ class RunVesselTests(unittest.TestCase):
                             ("--stage2-t", "406"), ("--stage2-v", "16"),
                             ("--early", "160"), ("--blobs", "15"),
                             ("--vessel-index", "1"), ("--pad", "7:7x3"),
+                            ("--repo-dir", "/tmp/custom-upstream"),
                             ("--proof-file", "/tmp/p1"),
                             ("--huge-mb", "12"), ("--retries", "3")):
             self.assertIn([flag, value],
