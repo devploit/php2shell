@@ -70,11 +70,12 @@ not match the profile.
 rows covering 39 distinct PHP builds.**
 
 Independent re-verification on 2026-10-30 reproduced the command proof
-(`uid=33(www-data)`) for 8.4.10, 8.4.11, 8.4.19, 8.4.20, 8.4.25, 8.5.5,
-8.5.9 and 8.5.11; the details are in
+(`uid=33(www-data)`) for every RCE profile added by this branch: 8.4.10,
+8.4.11, 8.4.19, 8.4.20, 8.4.25 amd64 and all of 8.5.0–8.5.10 amd64 plus
+8.5.11 aarch64. The details are in
 [the verification log](docs/calibration-logs/verified-2026-10-30.md). The
-remaining RCE profiles are contributor-reported until they are re-run (Docker
-Hub's pull limit blocked the additional images during that review).
+four profiles that already existed on `main` were verified before this branch
+and were not re-run during this review.
 
 `Heap leak` is stage 1, `libphp leak` is stage 2 and `RCE` is a real command
 proof on an isolated lab. `no` means not verified, not necessarily impossible;
